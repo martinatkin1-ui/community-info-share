@@ -1,0 +1,75 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+
+import { requireSuperAdminAccess } from "@/lib/auth/adminAccess";
+import { createServerClient } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
+
+const inviteSchema = z.object({
+  email: z.string().email(),
+  organizationId: z.string().uuid().optional(),
+  redirectTo: z.string().url().optional(),
+});
+
+export async function POST(request: Request) {
+  try {
+    await requireSuperAdminAccess();
+
+    const parsed = inviteSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid invite payload." },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createServerClient();
+    const payload = parsed.data;
+
+    const { data, error } = await supabase.auth.admin.inviteUserByEmail(payload.email, {
+      redirectTo:
+        payload.redirectTo ?? process.env.MANAGER_INVITE_REDIRECT_TO ?? "http://localhost:3000/manager-signin",
+      data: {
+        role: "manager",
+        organizationId: payload.organizationId ?? null,
+      },
+    });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (payload.organizationId) {
+      const { data: org, error: fetchError } = await supabase
+        .from("organizations")
+        .select("metadata")
+        .eq("id", payload.organizationId)
+        .single();
+
+      if (!fetchError) {
+        const nextMetadata = {
+          ...(org?.metadata ?? {}),
+          managerInvite: {
+            invitedEmail: payload.email,
+            invitedAt: new Date().toISOString(),
+          },
+        };
+
+        await supabase
+          .from("organizations")
+          .update({ metadata: nextMetadata, email: payload.email })
+          .eq("id", payload.organizationId);
+      }
+    }
+
+    return NextResponse.json({
+      message: "Manager invite sent.",
+      user: data.user,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Server error.";
+    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
