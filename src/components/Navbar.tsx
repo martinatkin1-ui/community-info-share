@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Session } from "@supabase/supabase-js";
+import type { VolunteerSession } from "@/lib/volunteer/session";
 
 const TABS = [
   { label: "Events", href: "/events" },
@@ -22,7 +23,18 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [volunteer, setVolunteer] = useState<VolunteerSession | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check volunteer cookie via API
+  useEffect(() => {
+    fetch("/api/volunteer/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.session) setVolunteer(d.session);
+      })
+      .catch(() => {});
+  }, []);
 
   // Check Supabase session to decide whether to show Staff & Partners inline
   useEffect(() => {
@@ -98,8 +110,26 @@ export default function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
-          {/* Staff & Partners dropdown — only shown when logged in */}
-          {isStaff && (
+          {/* Volunteer badge — shown when a volunteer session is active */}
+          {volunteer && (
+            <div className="hidden items-center gap-2 sm:flex">
+              <span className="rounded-full bg-brand-amber/20 px-3 py-1 text-xs font-semibold text-amber-800">
+                🤝 {volunteer.orgName}
+              </span>
+              <form action="/api/volunteer/signout" method="POST" className="inline-block">
+                <button
+                  type="submit"
+                  className="rounded-lg px-3 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800"
+                  onClick={() => setVolunteer(null)}
+                >
+                  Sign out
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Staff & Partners dropdown — only shown when logged in as manager/admin */}
+          {!volunteer && isStaff && (
             <div className="relative hidden sm:block" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen((o) => !o)}
@@ -138,6 +168,16 @@ export default function Navbar() {
                 </div>
               )}
             </div>
+          )}
+
+          {/* Volunteer portal link — shown to unauthenticated users */}
+          {!volunteer && !isStaff && (
+            <Link
+              href="/volunteer-signin"
+              className="hidden rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-50 hover:text-brand-slate sm:block"
+            >
+              Volunteer Access
+            </Link>
           )}
 
           {/* Mobile hamburger */}
@@ -179,7 +219,7 @@ export default function Navbar() {
                 {tab.label}
               </Link>
             ))}
-            {isStaff && (
+            {isStaff && !volunteer && (
               <>
                 <div className="my-1 border-t border-neutral-100" />
                 <p className="px-4 py-1 text-xs font-semibold uppercase tracking-widest text-neutral-400">
@@ -194,6 +234,30 @@ export default function Navbar() {
                     {link.label}
                   </Link>
                 ))}
+              </>
+            )}
+            {volunteer && (
+              <>
+                <div className="my-1 border-t border-neutral-100" />
+                <p className="px-4 py-1 text-xs font-semibold uppercase tracking-widest text-neutral-400">
+                  🤝 {volunteer.orgName}
+                </p>
+                <Link href="/volunteer-portal" className="rounded-lg px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-100">
+                  Volunteer Portal
+                </Link>
+                <form action="/api/volunteer/signout" method="POST">
+                  <button type="submit" className="w-full rounded-lg px-4 py-2.5 text-left text-sm text-neutral-500 hover:bg-neutral-100">
+                    Sign out
+                  </button>
+                </form>
+              </>
+            )}
+            {!volunteer && !isStaff && (
+              <>
+                <div className="my-1 border-t border-neutral-100" />
+                <Link href="/volunteer-signin" className="rounded-lg px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-100">
+                  Volunteer Access
+                </Link>
               </>
             )}
           </div>

@@ -16,7 +16,7 @@ export async function GET() {
     await requireSuperAdminAccess();
     const supabase = createServerClient();
 
-    const [verifiedCountRes, pendingCountRes, scrapeJobsRes, pendingQueueRes] = await Promise.all([
+    const [verifiedCountRes, pendingCountRes, scrapeJobsRes, pendingQueueRes, organizationsRes] = await Promise.all([
       supabase
         .from("organizations")
         .select("id", { count: "exact", head: true })
@@ -34,9 +34,13 @@ export async function GET() {
         .select("id, name, website_url, metadata, verification_status")
         .eq("verification_status", "pending")
         .order("created_at", { ascending: true }),
+      supabase
+        .from("organizations")
+        .select("id, name")
+        .order("name", { ascending: true }),
     ]);
 
-    if (verifiedCountRes.error || pendingCountRes.error || scrapeJobsRes.error || pendingQueueRes.error) {
+    if (verifiedCountRes.error || pendingCountRes.error || scrapeJobsRes.error || pendingQueueRes.error || organizationsRes.error) {
       return NextResponse.json(
         {
           error:
@@ -44,6 +48,7 @@ export async function GET() {
             pendingCountRes.error?.message ||
             scrapeJobsRes.error?.message ||
             pendingQueueRes.error?.message ||
+            organizationsRes.error?.message ||
             "Failed to load admin dashboard data.",
         },
         { status: 500 }
@@ -83,6 +88,7 @@ export async function GET() {
         pendingVerifications: pendingCountRes.count ?? 0,
         scraperHealthPct,
       },
+      organizations: organizationsRes.data ?? [],
       pendingOrganizations,
     });
   } catch (err) {

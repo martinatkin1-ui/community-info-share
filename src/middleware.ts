@@ -1,6 +1,10 @@
 import { type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 import { updateSession } from "@/lib/supabase/auth";
+
+const VOLUNTEER_COOKIE = "wm-volunteer";
+const VOLUNTEER_ALLOWED_PATHS = new Set(["/events", "/referrals", "/organizations", "/volunteer-portal", "/volunteer-signin"]);
 
 /**
  * Runs on every non-static request.
@@ -9,6 +13,32 @@ import { updateSession } from "@/lib/supabase/auth";
  * Without this, sessions silently expire between page loads.
  */
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isVolunteer = Boolean(request.cookies.get(VOLUNTEER_COOKIE)?.value);
+
+  if (isVolunteer) {
+    const isManagerArea = pathname.startsWith("/admin") || pathname.startsWith("/dashboard") || pathname.startsWith("/service-status") || pathname.startsWith("/onboarding") || pathname.startsWith("/scrape-");
+    if (isManagerArea) {
+      return NextResponse.redirect(new URL("/volunteer-portal", request.url));
+    }
+
+    const isApi = pathname.startsWith("/api/");
+    const allowsMutation = pathname.startsWith("/api/referrals") || pathname.startsWith("/api/volunteer/");
+    if (isApi && request.method !== "GET" && !allowsMutation) {
+      return NextResponse.json(
+        { error: "Volunteer access is read-only for this action." },
+        { status: 403 }
+      );
+    }
+
+    const publicRootAllowed =
+      pathname === "/" ||
+      Array.from(VOLUNTEER_ALLOWED_PATHS).some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    if (!isApi && !publicRootAllowed && !pathname.startsWith("/manager-") && !pathname.startsWith("/client-signin")) {
+      return NextResponse.redirect(new URL("/volunteer-portal", request.url));
+    }
+  }
+
   return updateSession(request);
 }
 

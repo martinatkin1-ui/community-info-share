@@ -41,11 +41,15 @@ export async function POST(request: Request) {
     const payload = parsed.data;
     const inviteRedirectUrl = getInviteRedirectUrl(request, payload.redirectTo);
 
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(payload.email, {
-      redirectTo: inviteRedirectUrl,
-      data: {
-        role: "manager",
-        organizationId: payload.organizationId ?? null,
+    const { data, error } = await supabase.auth.admin.generateLink({
+      type: "invite",
+      email: payload.email,
+      options: {
+        redirectTo: inviteRedirectUrl,
+        data: {
+          role: "manager",
+          organizationId: payload.organizationId ?? null,
+        },
       },
     });
 
@@ -76,9 +80,19 @@ export async function POST(request: Request) {
       }
     }
 
+    const properties = (data as { properties?: { action_link?: string } } | null)?.properties;
+    const inviteUrl = properties?.action_link;
+    if (!inviteUrl) {
+      return NextResponse.json(
+        { error: "Invite link could not be generated." },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
-      message: "Manager invite sent.",
-      user: data.user,
+      message: "Manager invite link generated.",
+      inviteUrl,
+      user: data?.user ?? null,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Server error.";

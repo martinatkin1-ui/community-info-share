@@ -3,6 +3,7 @@
 import { AlertCircle, Building2, CheckCircle2, Database } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import AccessKeyPanel from "./AccessKeyPanel";
 import InviteManagerPanel from "./InviteManagerPanel";
 import VerificationDrawer from "./VerificationDrawer";
 
@@ -19,6 +20,11 @@ interface AdminStats {
   scraperHealthPct: number;
 }
 
+interface OrgOption {
+  id: string;
+  name: string;
+}
+
 function typeBadge(type: string) {
   const key = type.toLowerCase();
   if (key.includes("nhs")) return "bg-sky-100 text-sky-800";
@@ -30,6 +36,7 @@ function typeBadge(type: string) {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [rows, setRows] = useState<PendingOrgRow[]>([]);
+  const [organizations, setOrganizations] = useState<OrgOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
@@ -44,6 +51,7 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error(data.error ?? "Failed to load admin data.");
       setStats(data.stats);
       setRows(data.pendingOrganizations ?? []);
+      setOrganizations(data.organizations ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error.");
     } finally {
@@ -101,7 +109,8 @@ export default function AdminDashboard() {
             </div>
           </section>
 
-          <InviteManagerPanel organizations={rows.map((row) => ({ id: row.id, name: row.name }))} />
+          <InviteManagerPanel organizations={organizations} />
+          <AccessKeyPanel organizations={organizations} />
 
           <section id="queue" className="rounded-2xl border border-neutral-200 bg-white p-4">
             <div className="mb-3 flex items-center justify-between">
