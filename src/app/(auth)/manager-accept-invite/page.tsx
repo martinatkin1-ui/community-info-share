@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
-export default function ManagerAcceptInvitePage() {
+function ManagerAcceptInviteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createBrowserSupabaseClient();
@@ -147,5 +147,13 @@ export default function ManagerAcceptInvitePage() {
         </button>
       </form>
     </main>
+  );
+}
+
+export default function ManagerAcceptInvitePage() {
+  return (
+    <Suspense fallback={<main className="mx-auto max-w-md px-6 py-12">Loading invite...</main>}>
+      <ManagerAcceptInviteContent />
+    </Suspense>
   );
 }
