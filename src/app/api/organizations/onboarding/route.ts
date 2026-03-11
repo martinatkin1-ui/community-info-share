@@ -143,70 +143,49 @@ export async function POST(request: Request) {
       logoPublicUrl = publicUrlInfo.data.publicUrl;
     }
 
-    const { data, error } = await supabase
-      .from("organizations")
-      .insert({
-        name: payload.name.trim(),
-        description: payload.bio.trim(),
-        website_url: payload.websiteUrl.trim(),
-        scraping_url: payload.scrapingUrl.trim(),
-        city: "Wolverhampton",
-        verification_status: "pending",
-        metadata: {
-          onboarding: {
-            orgType: payload.orgType,
-            logoFileName: logoFile?.name ?? null,
-            logoStoragePath,
-            logoPublicUrl,
-            socials: {
-              facebook: normalizeOptional(payload.facebookHandle),
-              instagram: normalizeOptional(payload.instagramHandle),
-              x: normalizeOptional(payload.xHandle),
-            },
-            governance: {
-              dataSharingAgreement: payload.dataSharingAgreement,
-              warmHandoverAcknowledged: payload.warmHandoverAcknowledged,
-            },
-            servicesCount: services.length,
-            submittedAt: new Date().toISOString(),
-          },
-        },
-      })
-      .select("id, name, verification_status, created_at")
-      .single();
+    const servicesPayload = services.map((service) => ({
+      title: service.title,
+      description: service.description,
+      category: service.category,
+      need_tags: service.needTags,
+      eligibility_badge: service.eligibilityBadge,
+      is_crisis: service.isCrisis,
+      availability_status: service.availabilityStatus,
+      referral_method: service.referralMethod,
+      contact_email: service.contactEmail,
+      contact_phone: service.contactPhone,
+    }));
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    const { data: organizationId, error } = await supabase.rpc("submit_organization_onboarding", {
+      p_name: payload.name.trim(),
+      p_description: payload.bio.trim(),
+      p_website_url: payload.websiteUrl.trim(),
+      p_scraping_url: payload.scrapingUrl.trim(),
+      p_org_type: payload.orgType,
+      p_logo_file_name: logoFile?.name ?? null,
+      p_logo_storage_path: logoStoragePath,
+      p_logo_public_url: logoPublicUrl,
+      p_facebook: normalizeOptional(payload.facebookHandle),
+      p_instagram: normalizeOptional(payload.instagramHandle),
+      p_x: normalizeOptional(payload.xHandle),
+      p_data_sharing_agreement: payload.dataSharingAgreement,
+      p_warm_handover_acknowledged: payload.warmHandoverAcknowledged,
+      p_services: servicesPayload,
+    });
 
-    const { error: servicesInsertError } = await supabase.from("services").insert(
-      services.map((service) => ({
-        organization_id: data.id,
-        title: service.title,
-        description: service.description,
-        category: service.category,
-        need_tags: service.needTags,
-        eligibility_badge: service.eligibilityBadge,
-        is_crisis: service.isCrisis,
-        availability_status: service.availabilityStatus,
-        referral_method: service.referralMethod,
-        contact_email: service.contactEmail,
-        contact_phone: service.contactPhone,
-        is_active: true,
-      }))
-    );
-
-    if (servicesInsertError) {
-      await supabase.from("organizations").delete().eq("id", data.id);
+    if (error || !organizationId) {
+      if (logoStoragePath) {
+        void supabase.storage.from(LOGO_BUCKET).remove([logoStoragePath]);
+      }
       return NextResponse.json(
-        { error: `Failed to save services: ${servicesInsertError.message}` },
+        { error: error?.message ?? "Failed to save onboarding record." },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
-      organizationId: data.id,
-      status: data.verification_status,
+      organizationId,
+      status: "pending",
       message:
         "Submitted for verification. A human admin will review your profile within 24 hours.",
     });

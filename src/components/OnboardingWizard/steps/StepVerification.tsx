@@ -1,10 +1,10 @@
 import { CheckCircle2, Clock3 } from "lucide-react";
 
-interface StepVerificationProps {
-  orgName: string;
-}
+import { useOnboarding } from "../OnboardingContext";
 
-export default function StepVerification({ orgName }: StepVerificationProps) {
+export default function StepVerification() {
+  const { values } = useOnboarding();
+
   return (
     <section className="space-y-5">
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
@@ -13,7 +13,7 @@ export default function StepVerification({ orgName }: StepVerificationProps) {
           Ready to Submit for Verification
         </h3>
         <p className="mt-2 text-sm text-emerald-700">
-          {orgName || "Your organisation profile"} will be placed in the verification queue for a human admin review.
+          {values.orgName || "Your organisation profile"} will be placed in the verification queue for a human admin review.
         </p>
       </div>
 

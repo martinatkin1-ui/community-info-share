@@ -1,6 +1,9 @@
 import ScrapeDryRunClient from "./scrape-dry-run-client";
+import { requireManagerPageAccess } from "@/lib/auth/managerPageGuard";
 
-export default function ScrapeDryRunPage() {
+export default async function ScrapeDryRunPage() {
+  await requireManagerPageAccess({ nextPath: "/scrape-dry-run" });
+
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
       <h1 className="text-3xl font-semibold">Event Scraper Dry Run</h1>

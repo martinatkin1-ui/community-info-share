@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createServerClient } from "@/lib/supabase/server";
+import { createReadOnlyClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -17,10 +17,12 @@ export async function GET(request: Request) {
   const city = searchParams.get("city") ?? "Wolverhampton";
   const need = searchParams.get("need")?.trim() ?? "";
   const q = searchParams.get("q")?.trim() ?? "";
+  const crisisOnly = searchParams.get("crisis") === "1";
+  const openNowOnly = searchParams.get("openNow") === "1";
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "80", 10), 150);
 
   try {
-    const supabase = createServerClient();
+    const supabase = createReadOnlyClient();
 
     let query = supabase
       .from("services")
@@ -35,7 +37,6 @@ export async function GET(request: Request) {
         availability_status,
         referral_method,
         contact_email,
-        contact_phone,
         organization_id,
         organizations ( id, name, city )
       `)
@@ -50,6 +51,14 @@ export async function GET(request: Request) {
 
     if (need) {
       query = query.contains("need_tags", [need]);
+    }
+
+    if (crisisOnly) {
+      query = query.eq("is_crisis", true);
+    }
+
+    if (openNowOnly) {
+      query = query.eq("availability_status", "open");
     }
 
     if (q) {
@@ -76,7 +85,7 @@ export async function GET(request: Request) {
       availabilityStatus: row.availability_status ?? "open",
       referralMethod: row.referral_method,
       contactEmail: row.contact_email ?? null,
-      contactPhone: row.contact_phone ?? null,
+      contactPhone: null,
     }));
     /* eslint-enable @typescript-eslint/no-explicit-any */
 

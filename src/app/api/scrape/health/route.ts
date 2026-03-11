@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requireManagerAccess } from "@/lib/auth/managerAccess";
 import { createServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -19,13 +20,23 @@ function daysSince(isoString: string): number {
  */
 export async function GET() {
   try {
+    const access = await requireManagerAccess();
     const supabase = createServerClient();
 
-    const { data: orgs, error: orgsErr } = await supabase
+    let orgQuery = supabase
       .from("organizations")
       .select("id, name, scraping_url, verification_status")
       .not("scraping_url", "is", null)
       .order("name");
+
+    if (access.role !== "super_admin") {
+      if (access.organizationIds.length === 0) {
+        return NextResponse.json({ health: [] });
+      }
+      orgQuery = orgQuery.in("id", access.organizationIds);
+    }
+
+    const { data: orgs, error: orgsErr } = await orgQuery;
 
     if (orgsErr) {
       return NextResponse.json({ error: orgsErr.message }, { status: 500 });
@@ -100,6 +111,9 @@ export async function GET() {
 
     return NextResponse.json({ health });
   } catch (err) {
+    if (err instanceof Error && err.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Server error." },
       { status: 500 }

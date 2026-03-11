@@ -5,6 +5,7 @@ import { useMemo, useState, type ComponentType } from "react";
 import { AlertOctagon, Building2, Home, Shield, Stethoscope, Wallet } from "lucide-react";
 
 import type { SupportService } from "@/types/services";
+import BaseDiscoveryCard from "./BaseDiscoveryCard";
 
 const CATEGORY_ICON: Record<string, ComponentType<{ className?: string }>> = {
   Housing: Home,
@@ -81,47 +82,55 @@ export default function ServiceCard({ service }: ServiceCardProps) {
   }, [ageBand, location, need, service.eligibilityBadge, service.needTags]);
 
   return (
-    <article className="break-inside-avoid mb-4 rounded-2xl border border-brand-sky/20 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand-slate/60">
-            <Icon className="h-3.5 w-3.5" /> {service.category}
-          </p>
-          <h3 className="mt-1 text-lg font-semibold text-brand-slate">{service.title}</h3>
-          <Link
-            href={`/organizations/${service.organizationId}`}
-            className="mt-0.5 inline-block text-xs text-neutral-500 underline-offset-2 hover:underline"
-          >
-            {service.organizationName}
-          </Link>
+    <BaseDiscoveryCard
+      imageAlt={`Service card for ${service.title}`}
+      fallbackBanner={
+        <div className="flex h-full items-end bg-gradient-to-br from-brand-sky/30 to-brand-lime/20 p-3">
+          <Icon className="h-7 w-7 text-brand-slate/70" />
         </div>
+      }
+      title={service.title}
+      subtitle={
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand-slate/60">
+              <Icon className="h-3.5 w-3.5" /> {service.category}
+            </p>
+            <Link
+              href={`/organizations/${service.organizationId}`}
+              className="mt-0.5 inline-block text-xs text-neutral-500 underline-offset-2 hover:underline"
+            >
+              {service.organizationName}
+            </Link>
+          </div>
 
-        {service.isCrisis && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
-            <AlertOctagon className="h-3.5 w-3.5" /> Crisis
+          {service.isCrisis && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+              <AlertOctagon className="h-3.5 w-3.5" /> Crisis
+            </span>
+          )}
+        </div>
+      }
+      badges={
+        <div className="mt-1 flex flex-wrap gap-2">
+          {service.eligibilityBadge && (
+            <span className="rounded-full bg-brand-amber/20 px-2.5 py-1 text-xs font-medium text-amber-900">
+              {service.eligibilityBadge}
+            </span>
+          )}
+          <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${status.style}`} title={status.helper}>
+            {status.label}
           </span>
-        )}
-      </div>
-
-      <p className="mt-3 text-sm text-neutral-700 line-clamp-3">{service.description}</p>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        {service.eligibilityBadge && (
-          <span className="rounded-full bg-brand-amber/20 px-2.5 py-1 text-xs font-medium text-amber-900">
-            {service.eligibilityBadge}
-          </span>
-        )}
-        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${status.style}`} title={status.helper}>
-          {status.label}
-        </span>
-        {service.needTags.slice(0, 3).map((tag) => (
-          <span key={tag} className="rounded-full bg-brand-lime/30 px-2.5 py-1 text-xs font-medium text-emerald-900">
-            {tag}
-          </span>
-        ))}
-      </div>
-
-      <div className="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+          {service.needTags.slice(0, 3).map((tag) => (
+            <span key={tag} className="rounded-full bg-brand-lime/30 px-2.5 py-1 text-xs font-medium text-emerald-900">
+              {tag}
+            </span>
+          ))}
+        </div>
+      }
+      body={<p className="text-sm text-neutral-700 line-clamp-3">{service.description}</p>}
+      footer={<>
+      <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
         <button
           type="button"
           onClick={() => setShowChecker((v) => !v)}
@@ -197,6 +206,7 @@ export default function ServiceCard({ service }: ServiceCardProps) {
           </div>
         )}
       </div>
-    </article>
+      </>}
+    />
   );
 }

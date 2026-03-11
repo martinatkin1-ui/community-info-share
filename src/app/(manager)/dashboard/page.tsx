@@ -1,14 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
-import { getManagerAccessContext } from "@/lib/auth/managerAccess";
+import { requireManagerPageAccess } from "@/lib/auth/managerPageGuard";
 
 export default async function ManagerDashboardPage() {
-  const access = await getManagerAccessContext();
-
-  if (!access) {
-    redirect("/manager-signin?next=/dashboard");
-  }
+  await requireManagerPageAccess({ nextPath: "/dashboard", requireOrganization: false });
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
@@ -31,10 +26,7 @@ export default async function ManagerDashboardPage() {
           Scrape Health Dashboard
         </Link>
         <Link className="rounded-lg border p-4 hover:bg-neutral-50" href="/service-status">
-          Service Status Manager
-        </Link>
-          <Link className="rounded-lg border p-4 hover:bg-neutral-50" href="/service-operations">
-          View Public Organizations
+          Service Status &amp; Operations
         </Link>
       </section>
     </main>

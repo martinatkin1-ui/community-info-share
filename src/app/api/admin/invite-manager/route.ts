@@ -12,6 +12,19 @@ const inviteSchema = z.object({
   redirectTo: z.string().url().optional(),
 });
 
+function getInviteRedirectUrl(request: Request, redirectTo?: string) {
+  if (redirectTo) {
+    return redirectTo;
+  }
+
+  if (process.env.MANAGER_INVITE_REDIRECT_TO) {
+    return process.env.MANAGER_INVITE_REDIRECT_TO;
+  }
+
+  const origin = request.headers.get("origin") ?? new URL(request.url).origin;
+  return `${origin}/manager-signin`;
+}
+
 export async function POST(request: Request) {
   try {
     await requireSuperAdminAccess();
@@ -26,10 +39,10 @@ export async function POST(request: Request) {
 
     const supabase = createServerClient();
     const payload = parsed.data;
+    const inviteRedirectUrl = getInviteRedirectUrl(request, payload.redirectTo);
 
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(payload.email, {
-      redirectTo:
-        payload.redirectTo ?? process.env.MANAGER_INVITE_REDIRECT_TO ?? "http://localhost:3000/manager-signin",
+      redirectTo: inviteRedirectUrl,
       data: {
         role: "manager",
         organizationId: payload.organizationId ?? null,

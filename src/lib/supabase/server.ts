@@ -17,3 +17,24 @@ export function createServerClient() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
+
+/**
+ * Server-only Supabase client using the anon/public key.
+ * Respects Row Level Security policies. Use this for public read endpoints so
+ * the service-role key is never exercised for data that RLS can guard.
+ */
+export function createReadOnlyClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+  }
+
+  return createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
+// Back-compat alias while callsites are migrated.
+export const createAnonClient = createReadOnlyClient;

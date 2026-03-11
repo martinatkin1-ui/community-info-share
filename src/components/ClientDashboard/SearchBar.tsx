@@ -6,9 +6,10 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  "aria-label"?: string;
 }
 
-export default function SearchBar({ value, onChange, placeholder }: Props) {
+export default function SearchBar({ value, onChange, placeholder, "aria-label": ariaLabel }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // "/" shortcut focuses the search bar
@@ -40,7 +41,7 @@ export default function SearchBar({ value, onChange, placeholder }: Props) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder ?? "Search events, organisations…"}
-        aria-label="Search events"
+        aria-label={ariaLabel ?? "Search events"}
         className="
           w-full rounded-2xl border border-neutral-200 bg-white
           py-3 pl-11 pr-14

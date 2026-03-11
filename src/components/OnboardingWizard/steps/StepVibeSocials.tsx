@@ -1,12 +1,6 @@
 import { HeartHandshake } from "lucide-react";
 
-import type { OnboardingFormValues } from "../types";
-
-interface StepVibeSocialsProps {
-  values: OnboardingFormValues;
-  errors: Record<string, string>;
-  onFieldChange: <K extends keyof OnboardingFormValues>(key: K, value: OnboardingFormValues[K]) => void;
-}
+import { useOnboarding } from "../OnboardingContext";
 
 function SocialInput({
   label,
@@ -36,7 +30,9 @@ function SocialInput({
   );
 }
 
-export default function StepVibeSocials({ values, errors, onFieldChange }: StepVibeSocialsProps) {
+export default function StepVibeSocials() {
+  const { values, errors, onFieldChange } = useOnboarding();
+
   return (
     <section className="space-y-5">
       <div className="rounded-xl border border-brand-lime/40 bg-brand-lime/20 p-4 text-sm text-brand-slate">

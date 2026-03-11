@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { DiscoveryEvent, EventCategory } from "@/types/events";
+import BaseDiscoveryCard from "./BaseDiscoveryCard";
 import CategoryTags from "./CategoryTags";
 import SearchBar from "./SearchBar";
 import ServiceDiscovery from "./ServiceDiscovery";
@@ -150,88 +151,65 @@ function SkeletonCard() {
 // ── Single event card ─────────────────────────────────────────────────────────
 function EventCard({ event, index, lowData = false }: { event: DiscoveryEvent; index: number; lowData?: boolean }) {
   return (
-    <article
-      className={`break-inside-avoid mb-4 rounded-2xl overflow-hidden shadow-sm
-                 border border-white/60 bg-white
-                 ${!lowData ? "hover:-translate-y-1 hover:shadow-md transition-transform duration-200" : ""}`}
-    >
-      {/* Image / colour banner — hidden in low-data mode */}
-      {!lowData && (
-        event.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={event.imageUrl}
-            alt={`Flier for ${event.title}`}
-            className="w-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className={`h-28 bg-gradient-to-br ${gradientFor(index)} flex items-end p-3`}>
-            <span className="text-3xl select-none" aria-hidden="true">
-              {event.categories[0] === "Recovery"      ? "🌱"
-             : event.categories[0] === "Mental Health" ? "💜"
-             : event.categories[0] === "Housing"       ? "🏠"
-             : event.categories[0] === "Social"        ? "☕"
-             : event.categories[0] === "Employment"    ? "💼"
-             : event.categories[0] === "Family"        ? "🤝"
-             : "📅"}
-            </span>
-          </div>
-        )
-      )}
-
-      <div className="p-4 space-y-2">
-        {/* Category pills */}
-        {event.categories.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {event.categories.slice(0, 3).map((cat) => (
-              <span
-                key={cat}
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${CAT_PILL[cat] ?? "bg-neutral-100 text-neutral-600"}`}
-              >
-                {cat}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Title */}
-        <h3 className="font-semibold text-brand-slate leading-snug line-clamp-2">
-          {event.title}
-        </h3>
-
-        {/* Org */}
-        <p className="text-xs text-neutral-500 font-medium truncate">
-          {event.organizationName}
-        </p>
-
-        {/* Date / time / location */}
-        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-neutral-500">
-          <span>📅 {formatDate(event.startAtIso)}</span>
-          <span>🕐 {formatTime(event.startAtIso)}</span>
-          {(event.locationName ?? event.city) && (
-            <span>📍 {event.locationName ?? event.city}</span>
-          )}
-        </div>
-
-        {/* Description — hidden in low-data mode */}
-        {!lowData && event.description && (
-          <p className="text-sm text-neutral-600 line-clamp-3 leading-relaxed">
-            {event.description}
-          </p>
-        )}
-
-        {/* Text Me button — shown only in low-data mode */}
-        {lowData && <TextMeButton event={event} />}
-
-        {/* Scraped badge */}
-        {event.isScraped && (
-          <span className="inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-400">
-            Auto-detected
+    <BaseDiscoveryCard
+      imageUrl={event.imageUrl}
+      imageAlt={`Flier for ${event.title}`}
+      lowData={lowData}
+      fallbackBanner={
+        <div className={`flex h-full items-end bg-gradient-to-br ${gradientFor(index)} p-3`}>
+          <span className="select-none text-3xl" aria-hidden="true">
+            {event.categories[0] === "Recovery"      ? "🌱"
+           : event.categories[0] === "Mental Health" ? "💜"
+           : event.categories[0] === "Housing"       ? "🏠"
+           : event.categories[0] === "Social"        ? "☕"
+           : event.categories[0] === "Employment"    ? "💼"
+           : event.categories[0] === "Family"        ? "🤝"
+           : "📅"}
           </span>
-        )}
-      </div>
-    </article>
+        </div>
+      }
+      badges={event.categories.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {event.categories.slice(0, 3).map((cat) => (
+            <span
+              key={cat}
+              className={`rounded-full px-2 py-0.5 text-xs font-medium ${CAT_PILL[cat] ?? "bg-neutral-100 text-neutral-600"}`}
+            >
+              {cat}
+            </span>
+          ))}
+        </div>
+      ) : undefined}
+      title={event.title}
+      subtitle={<p className="truncate text-xs font-medium text-neutral-500">{event.organizationName}</p>}
+      body={
+        <>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-neutral-500">
+            <span>📅 {formatDate(event.startAtIso)}</span>
+            <span>🕐 {formatTime(event.startAtIso)}</span>
+            {(event.locationName ?? event.city) && (
+              <span>📍 {event.locationName ?? event.city}</span>
+            )}
+          </div>
+
+          {!lowData && event.description && (
+            <p className="line-clamp-3 text-sm leading-relaxed text-neutral-600">
+              {event.description}
+            </p>
+          )}
+        </>
+      }
+      footer={
+        <>
+          {lowData && <TextMeButton event={event} />}
+          {event.isScraped && (
+            <span className="inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-400">
+              Auto-detected
+            </span>
+          )}
+        </>
+      }
+    />
   );
 }
 
@@ -301,6 +279,10 @@ export default function DiscoveryFeed() {
     return "Good evening";
   }, []);
 
+  function setModeWithKeyboard(nextMode: DiscoveryMode) {
+    setMode(nextMode);
+  }
+
   return (
     <section className="space-y-6">
 
@@ -319,9 +301,13 @@ export default function DiscoveryFeed() {
 
       {/* ── Discovery Toggle ── */}
       <div className="rounded-2xl border border-brand-sky/30 bg-white p-2 shadow-sm">
-        <div className="grid grid-cols-2 gap-2">
+        <div role="group" aria-label="View mode" className="grid grid-cols-2 gap-2">
           <button
             type="button"
+            aria-pressed={mode === "events"}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowRight") setModeWithKeyboard("services");
+            }}
             onClick={() => setMode("events")}
             className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
               mode === "events"
@@ -333,6 +319,10 @@ export default function DiscoveryFeed() {
           </button>
           <button
             type="button"
+            aria-pressed={mode === "services"}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowLeft") setModeWithKeyboard("events");
+            }}
             onClick={() => setMode("services")}
             className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
               mode === "services"
@@ -347,7 +337,16 @@ export default function DiscoveryFeed() {
 
       {/* ── Search + category filters + low-data toggle ── */}
       <div className="space-y-3 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm">
-        <SearchBar value={query} onChange={setQuery} />
+        <SearchBar
+          value={query}
+          onChange={setQuery}
+          placeholder={
+            mode === "events"
+              ? "Search events, places, and organisers..."
+              : "Search support services by need or name..."
+          }
+          aria-label={mode === "events" ? "Search events" : "Search support services"}
+        />
         {mode === "events" ? (
           <>
             <div className="flex flex-wrap items-center justify-between gap-2">

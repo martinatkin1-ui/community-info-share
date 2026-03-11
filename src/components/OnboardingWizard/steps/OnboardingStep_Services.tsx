@@ -1,12 +1,7 @@
 import { Plus, Trash2 } from "lucide-react";
 
-import type { CoreServiceDraft, OnboardingFormValues } from "../types";
-
-interface OnboardingStepServicesProps {
-  values: OnboardingFormValues;
-  errors: Record<string, string>;
-  onFieldChange: <K extends keyof OnboardingFormValues>(key: K, value: OnboardingFormValues[K]) => void;
-}
+import { useOnboarding } from "../OnboardingContext";
+import type { CoreServiceDraft } from "../types";
 
 const SERVICE_CATEGORIES = [
   "Housing",
@@ -45,7 +40,9 @@ function newService(): CoreServiceDraft {
   };
 }
 
-export default function OnboardingStep_Services({ values, errors, onFieldChange }: OnboardingStepServicesProps) {
+export default function OnboardingStep_Services() {
+  const { values, errors, onFieldChange } = useOnboarding();
+
   function updateService(index: number, patch: Partial<CoreServiceDraft>) {
     const next = [...values.coreServices];
     next[index] = { ...next[index], ...patch };

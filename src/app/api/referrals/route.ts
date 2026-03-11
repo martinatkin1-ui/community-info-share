@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { notifyOrganization } from "@/lib/notifications/notifyOrganization";
-import { createServerClient } from "@/lib/supabase/server";
+import { createAuthServerClient, getAuthenticatedUser } from "@/lib/supabase/auth";
 import type { ReferralFormData } from "@/types/domain";
 
 export const runtime = "nodejs";
@@ -70,7 +70,29 @@ export async function POST(request: Request) {
   const payload = body as ReferralFormData;
   const consentTimestamp = new Date().toISOString();
 
-  const supabase = createServerClient();
+  const user = await getAuthenticatedUser().catch(() => null);
+
+  if (!user?.id || !user.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Use authenticated client (anon key + user session) so RLS is enforced.
+  const supabase = createAuthServerClient();
+
+  // Sender organization must belong to the logged-in manager account.
+  const { data: senderOrg, error: senderOrgError } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("id", payload.fromOrganizationId)
+    .eq("email", user.email)
+    .single();
+
+  if (senderOrgError || !senderOrg) {
+    return NextResponse.json(
+      { error: "You can only submit referrals from organizations you manage." },
+      { status: 403 }
+    );
+  }
 
   // ── 1. Fetch both organisations (name for email, notification email server-side) ──
   const { data: orgs, error: orgsError } = await supabase
@@ -111,6 +133,7 @@ export async function POST(request: Request) {
       referral_status: "submitted",
       notes,
       vibe_check_note: payload.vibeCheckNote?.trim() || null,
+      referred_by: user.id,
     })
     .select("id, created_at")
     .single();

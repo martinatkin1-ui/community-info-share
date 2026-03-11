@@ -1,14 +1,8 @@
-import { redirect } from "next/navigation";
-
 import ServiceStatusManager from "@/components/Manager/ServiceStatusManager";
-import { getManagerAccessContext } from "@/lib/auth/managerAccess";
+import { requireManagerPageAccess } from "@/lib/auth/managerPageGuard";
 
 export default async function ServiceStatusPage() {
-  const access = await getManagerAccessContext();
-
-  if (!access) {
-    redirect("/manager-signin?next=/service-status");
-  }
+  await requireManagerPageAccess({ nextPath: "/service-status" });
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">

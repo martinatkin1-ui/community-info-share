@@ -1,22 +1,10 @@
 import { Link2, Loader2, Sparkles } from "lucide-react";
 
-import type { OnboardingFormValues } from "../types";
+import { useOnboarding } from "../OnboardingContext";
 
-interface StepDataEngineProps {
-  values: OnboardingFormValues;
-  errors: Record<string, string>;
-  scrapeState: "idle" | "testing" | "success";
-  onFieldChange: <K extends keyof OnboardingFormValues>(key: K, value: OnboardingFormValues[K]) => void;
-  onTestScrape: () => void;
-}
+export default function StepDataEngine() {
+  const { values, errors, scrapeState, onFieldChange, testScrape } = useOnboarding();
 
-export default function StepDataEngine({
-  values,
-  errors,
-  scrapeState,
-  onFieldChange,
-  onTestScrape,
-}: StepDataEngineProps) {
   return (
     <section className="space-y-5">
       <div>
@@ -55,7 +43,7 @@ export default function StepDataEngine({
         </p>
         <button
           type="button"
-          onClick={onTestScrape}
+          onClick={testScrape}
           disabled={scrapeState === "testing"}
           className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand-slate px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >

@@ -19,7 +19,9 @@ export async function scrapeWithFirecrawl(url: string): Promise<ScrapeDryRunResu
     throw new Error("FIRECRAWL_API_KEY is not configured.");
   }
 
+  // 30-second wall-clock timeout prevents the route hanging on slow providers.
   const response = await fetch(`${baseUrl}/v1/scrape`, {
+    signal: AbortSignal.timeout(30_000),
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createServerClient } from "@/lib/supabase/server";
+import { createReadOnlyClient } from "@/lib/supabase/server";
 
 /**
  * Returns the minimal fields needed to populate organisation selectors in forms.
@@ -8,7 +8,7 @@ import { createServerClient } from "@/lib/supabase/server";
  */
 export async function GET() {
   try {
-    const supabase = createServerClient();
+    const supabase = createReadOnlyClient();
 
     const { data, error } = await supabase
       .from("organizations")

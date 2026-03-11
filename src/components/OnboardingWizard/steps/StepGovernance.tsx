@@ -1,14 +1,10 @@
 import { ShieldCheck } from "lucide-react";
 
-import type { OnboardingFormValues } from "../types";
+import { useOnboarding } from "../OnboardingContext";
 
-interface StepGovernanceProps {
-  values: OnboardingFormValues;
-  errors: Record<string, string>;
-  onFieldChange: <K extends keyof OnboardingFormValues>(key: K, value: OnboardingFormValues[K]) => void;
-}
+export default function StepGovernance() {
+  const { values, errors, onFieldChange } = useOnboarding();
 
-export default function StepGovernance({ values, errors, onFieldChange }: StepGovernanceProps) {
   return (
     <section className="space-y-5">
       <div className="rounded-xl border border-brand-sky/40 bg-brand-sky/20 p-4 text-sm text-brand-slate">

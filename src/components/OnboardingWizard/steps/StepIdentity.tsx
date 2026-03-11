@@ -1,15 +1,11 @@
 import { Building2, UploadCloud } from "lucide-react";
 
+import { useOnboarding } from "../OnboardingContext";
 import { ORG_TYPES, type OnboardingFormValues } from "../types";
 
-interface StepIdentityProps {
-  values: OnboardingFormValues;
-  errors: Record<string, string>;
-  logoPreviewUrl: string | null;
-  onFieldChange: <K extends keyof OnboardingFormValues>(key: K, value: OnboardingFormValues[K]) => void;
-}
+export default function StepIdentity() {
+  const { values, errors, logoPreviewUrl, onFieldChange } = useOnboarding();
 
-export default function StepIdentity({ values, errors, logoPreviewUrl, onFieldChange }: StepIdentityProps) {
   return (
     <section className="space-y-5">
       <div>

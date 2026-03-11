@@ -1,6 +1,9 @@
 import OnboardingWizard from "@/components/OnboardingWizard/OnboardingWizard";
+import { requireManagerPageAccess } from "@/lib/auth/managerPageGuard";
 
-export default function OrganizationOnboardingPage() {
+export default async function OrganizationOnboardingPage() {
+  await requireManagerPageAccess({ nextPath: "/onboarding" });
+
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
       <header className="rounded-3xl bg-gradient-to-r from-brand-amber/30 via-brand-sky/20 to-brand-lime/30 px-6 py-8">

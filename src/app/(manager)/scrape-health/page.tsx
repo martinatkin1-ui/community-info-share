@@ -1,6 +1,9 @@
 import ScrapeHealthClient from "./scrape-health-client";
+import { requireManagerPageAccess } from "@/lib/auth/managerPageGuard";
 
-export default function ScrapeHealthPage() {
+export default async function ScrapeHealthPage() {
+  await requireManagerPageAccess({ nextPath: "/scrape-health" });
+
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
       <h1 className="text-3xl font-semibold">Scraper Health Dashboard</h1>

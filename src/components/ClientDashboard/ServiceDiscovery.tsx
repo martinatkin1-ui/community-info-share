@@ -42,6 +42,8 @@ interface ServiceDiscoveryProps {
 export default function ServiceDiscovery({ query }: ServiceDiscoveryProps) {
   const [services, setServices] = useState<SupportService[]>([]);
   const [needFilter, setNeedFilter] = useState<NeedKey | null>(null);
+  const [openNowOnly, setOpenNowOnly] = useState(false);
+  const [crisisOnly, setCrisisOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,12 +60,14 @@ export default function ServiceDiscovery({ query }: ServiceDiscoveryProps) {
     }
   }, [mappedNeedFromQuery, needFilter]);
 
-  const fetchServices = useCallback(async (need: NeedKey | null) => {
+  const fetchServices = useCallback(async (need: NeedKey | null, quick: { openNowOnly: boolean; crisisOnly: boolean }) => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({ city: "Wolverhampton", limit: "120" });
       if (need) params.set("need", NEED_TO_TAG[need]);
+      if (quick.openNowOnly) params.set("openNow", "1");
+      if (quick.crisisOnly) params.set("crisis", "1");
 
       const res = await fetch(`/api/services?${params.toString()}`);
       const data = await res.json();
@@ -77,8 +81,8 @@ export default function ServiceDiscovery({ query }: ServiceDiscoveryProps) {
   }, []);
 
   useEffect(() => {
-    fetchServices(needFilter);
-  }, [needFilter, fetchServices]);
+    fetchServices(needFilter, { openNowOnly, crisisOnly });
+  }, [needFilter, openNowOnly, crisisOnly, fetchServices]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return services;
@@ -99,6 +103,36 @@ export default function ServiceDiscovery({ query }: ServiceDiscoveryProps) {
 
   return (
     <section className="space-y-4">
+      <div className="rounded-xl border border-brand-coral/20 bg-brand-coral/5 p-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand-slate/70">Quick Actions</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            aria-pressed={openNowOnly}
+            onClick={() => setOpenNowOnly((prev) => !prev)}
+            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+              openNowOnly
+                ? "border-emerald-700 bg-emerald-700 text-white"
+                : "border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-50"
+            }`}
+          >
+            Open Now
+          </button>
+          <button
+            type="button"
+            aria-pressed={crisisOnly}
+            onClick={() => setCrisisOnly((prev) => !prev)}
+            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+              crisisOnly
+                ? "border-red-700 bg-red-700 text-white"
+                : "border-red-300 bg-white text-red-800 hover:bg-red-50"
+            }`}
+          >
+            Crisis Support
+          </button>
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-2">
         {NEED_LABELS.map((need) => (
           <button

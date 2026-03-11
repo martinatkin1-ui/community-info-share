@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createServerClient } from "@/lib/supabase/server";
+import { createReadOnlyClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -11,7 +11,7 @@ export async function GET(
   const orgId = context.params.id;
 
   try {
-    const supabase = createServerClient();
+    const supabase = createReadOnlyClient();
 
     const [orgRes, servicesRes, eventsRes] = await Promise.all([
       supabase
