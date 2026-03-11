@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
-export default function ManagerSigninPage() {
+function ManagerSigninContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createBrowserSupabaseClient();
@@ -86,5 +86,13 @@ export default function ManagerSigninPage() {
         </a>
       </form>
     </main>
+  );
+}
+
+export default function ManagerSigninPage() {
+  return (
+    <Suspense fallback={<main className="mx-auto max-w-md px-6 py-12">Loading sign-in...</main>}>
+      <ManagerSigninContent />
+    </Suspense>
   );
 }

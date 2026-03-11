@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import ReferralForm from "@/components/ReferralForm";
 
 export default function ReferralsPage() {
@@ -10,7 +12,9 @@ export default function ReferralsPage() {
         minimisation principles.
       </p>
       <div className="mt-8">
-        <ReferralForm />
+        <Suspense fallback={<p className="text-sm text-neutral-500">Loading referral form...</p>}>
+          <ReferralForm />
+        </Suspense>
       </div>
     </main>
   );
