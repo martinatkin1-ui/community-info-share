@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import type { DiscoveryEvent, EventCategory } from "@/types/events";
 import BaseDiscoveryCard from "./BaseDiscoveryCard";
@@ -218,8 +219,9 @@ type FeedState = "idle" | "loading" | "loaded" | "error";
 type DiscoveryMode = "events" | "services";
 
 export default function DiscoveryFeed() {
+  const searchParams                = useSearchParams();
   const [mode, setMode]             = useState<DiscoveryMode>("events");
-  const [query, setQuery]           = useState("");
+  const [query, setQuery]           = useState(() => searchParams.get("q") ?? "");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [categories, setCategories] = useState<EventCategory[]>([]);
   const [events, setEvents]         = useState<DiscoveryEvent[]>([]);
