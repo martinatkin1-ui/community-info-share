@@ -33,7 +33,7 @@ export default async function ManagerDashboardPage() {
         <Link className="rounded-lg border p-4 hover:bg-neutral-50" href="/service-status">
           Service Status Manager
         </Link>
-        <Link className="rounded-lg border p-4 hover:bg-neutral-50" href="/organizations">
+          <Link className="rounded-lg border p-4 hover:bg-neutral-50" href="/service-operations">
           View Public Organizations
         </Link>
       </section>

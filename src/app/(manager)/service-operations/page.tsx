@@ -1,6 +1,6 @@
 import ServiceStatusManager from "@/components/Manager/ServiceStatusManager";
 
-export default function ManagerOrganizationsPage() {
+export default function ManagerServiceOperationsPage() {
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
       <h1 className="text-3xl font-semibold">Organization Management</h1>

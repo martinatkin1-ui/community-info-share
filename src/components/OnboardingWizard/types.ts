@@ -116,10 +116,10 @@ export const servicesSchema = z.object({
 
 export const governanceSchema = z.object({
   dataSharingAgreement: z.literal(true, {
-    errorMap: () => ({ message: "You must accept the Data Sharing Agreement." }),
+    message: "You must accept the Data Sharing Agreement.",
   }),
   warmHandoverAcknowledged: z.literal(true, {
-    errorMap: () => ({ message: "Please acknowledge the Warm Handover approach." }),
+    message: "Please acknowledge the Warm Handover approach.",
   }),
 });
 

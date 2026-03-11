@@ -93,5 +93,5 @@ export function parseEventsFromText(rawText: string, sourceUrl: string): Scraped
     }
   }
 
-  return [...deduped.values()].slice(0, 40);
+  return Array.from(deduped.values()).slice(0, 40);
 }
