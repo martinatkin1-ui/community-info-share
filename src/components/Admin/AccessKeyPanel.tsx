@@ -9,10 +9,10 @@ interface OrgOption {
 
 interface AccessKeyRow {
   id: string;
-  key_code: string;
-  expires_at: string;
-  created_at: string;
-  organization_id: string;
+  tokenPreview: string;
+  expiresAt: string;
+  createdAt: string;
+  organizationId: string;
   organizations?: { name?: string } | Array<{ name?: string }> | null;
 }
 
@@ -64,7 +64,7 @@ export default function AccessKeyPanel({ organizations }: AccessKeyPanelProps) {
       if (!res.ok) throw new Error(data.error ?? "Failed to generate key.");
 
       setMessage(
-        `New referral token: ${data.key.key_code} (expires ${new Date(data.key.expires_at).toLocaleDateString("en-GB")})`
+        `New referral token: ${data.rawKey} (expires ${new Date(data.key.expires_at).toLocaleDateString("en-GB")})`
       );
       await loadKeys();
     } catch (err) {
@@ -129,9 +129,9 @@ export default function AccessKeyPanel({ organizations }: AccessKeyPanelProps) {
               {rows.map((row) => (
                 <tr key={row.id} className="border-b border-neutral-100">
                   <td className="px-2 py-2 text-neutral-700">{orgName(row)}</td>
-                  <td className="px-2 py-2 font-mono font-semibold tracking-wider text-brand-slate">{row.key_code}</td>
-                  <td className="px-2 py-2 text-neutral-600">{new Date(row.expires_at).toLocaleDateString("en-GB")}</td>
-                  <td className="px-2 py-2 text-neutral-500">{new Date(row.created_at).toLocaleDateString("en-GB")}</td>
+                  <td className="px-2 py-2 font-mono font-semibold tracking-wider text-brand-slate">{row.tokenPreview}</td>
+                  <td className="px-2 py-2 text-neutral-600">{new Date(row.expiresAt).toLocaleDateString("en-GB")}</td>
+                  <td className="px-2 py-2 text-neutral-500">{new Date(row.createdAt).toLocaleDateString("en-GB")}</td>
                 </tr>
               ))}
               {rows.length === 0 && (

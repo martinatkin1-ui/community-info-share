@@ -15,9 +15,9 @@ const actionSchema = z.object({
 
 export async function POST(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const orgId = context.params.id;
+  const { id: orgId } = await context.params;
 
   try {
     await requireSuperAdminAccess();

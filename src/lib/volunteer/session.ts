@@ -26,6 +26,14 @@ const SESSION_MS = 8 * 60 * 60 * 1000;
 /** Characters that are unambiguous in print / handwriting. */
 const KEY_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
+function keySecret(): string {
+  const s = process.env.VOLUNTEER_ACCESS_KEY_SECRET ?? process.env.VOLUNTEER_SESSION_SECRET;
+  if (!s && process.env.NODE_ENV === "production") {
+    throw new Error("VOLUNTEER_ACCESS_KEY_SECRET (or VOLUNTEER_SESSION_SECRET) must be set in production.");
+  }
+  return s ?? "dev-insecure-change-me";
+}
+
 function secret(): string {
   const s = process.env.VOLUNTEER_SESSION_SECRET;
   if (!s && process.env.NODE_ENV === "production") {
@@ -38,6 +46,23 @@ function secret(): string {
 export function generateAccessKeyCode(): string {
   const bytes = randomBytes(6);
   return Array.from(bytes, (b) => KEY_CHARS[b % KEY_CHARS.length]).join("");
+}
+
+/** Canonicalize user-entered key for reliable comparisons. */
+export function normalizeAccessKeyCode(value: string): string {
+  return value.replace(/[\s\-]/g, "").toUpperCase().slice(0, 6);
+}
+
+/** HMAC hash used for DB storage and lookups (keeps plaintext out of DB). */
+export function hashAccessKeyCode(code: string): string {
+  const normalized = normalizeAccessKeyCode(code);
+  return createHmac("sha256", keySecret()).update(normalized).digest("hex");
+}
+
+/** Keep only a hint for support workflows and UI tables. */
+export function keyHint(code: string): string {
+  const normalized = normalizeAccessKeyCode(code);
+  return normalized.slice(-4).padStart(4, "*");
 }
 
 /** Create a signed cookie value for the volunteer session. */

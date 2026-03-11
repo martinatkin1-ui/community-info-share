@@ -13,8 +13,8 @@ function getAuthEnv() {
   return { url, anonKey };
 }
 
-export function createAuthServerClient() {
-  const cookieStore = cookies();
+export async function createAuthServerClient() {
+  const cookieStore = await cookies();
   const { url, anonKey } = getAuthEnv();
 
   return createServerClient(url, anonKey, {
@@ -36,7 +36,7 @@ export function createAuthServerClient() {
 }
 
 export async function getAuthenticatedUser() {
-  const supabase = createAuthServerClient();
+  const supabase = await createAuthServerClient();
   const { data, error } = await supabase.auth.getUser();
 
   if (error) {

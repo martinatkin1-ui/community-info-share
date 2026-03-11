@@ -6,9 +6,9 @@ export const runtime = "nodejs";
 
 export async function GET(
   _request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const orgId = context.params.id;
+  const { id: orgId } = await context.params;
 
   try {
     const supabase = createReadOnlyClient();

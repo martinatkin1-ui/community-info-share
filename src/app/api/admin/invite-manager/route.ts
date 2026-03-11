@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireSuperAdminAccess } from "@/lib/auth/adminAccess";
+import { clientIpFromHeaders, consumeRateLimit } from "@/lib/security/rateLimit";
 import { createServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -28,6 +29,15 @@ function getInviteRedirectUrl(request: Request, redirectTo?: string) {
 export async function POST(request: Request) {
   try {
     await requireSuperAdminAccess();
+
+    const ip = clientIpFromHeaders(request.headers);
+    const rl = consumeRateLimit(`admin-invite-manager:${ip}`, 40, 60 * 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many invite requests. Please wait before generating more." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      );
+    }
 
     const parsed = inviteSchema.safeParse(await request.json());
     if (!parsed.success) {

@@ -61,8 +61,10 @@ export default function Navbar() {
 
   // Close mobile menu on route change
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     setMobileOpen(false);
     setDropdownOpen(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [pathname]);
 
   function isActive(href: string) {

@@ -15,9 +15,10 @@ const patchSchema = z.object({
 
 export async function PATCH(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: serviceId } = await context.params;
     const access = await requireManagerAccess();
     const parsed = patchSchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -31,7 +32,7 @@ export async function PATCH(
     const { data: existing, error: existingError } = await supabase
       .from("services")
       .select("id, organization_id, availability_status, is_active, eligibility_badge, is_crisis")
-      .eq("id", context.params.id)
+      .eq("id", serviceId)
       .single();
 
     if (existingError || !existing) {
@@ -54,7 +55,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from("services")
       .update(nextPatch)
-      .eq("id", context.params.id)
+      .eq("id", serviceId)
       .select("id, availability_status, is_active, eligibility_badge, is_crisis, updated_at")
       .single();
 

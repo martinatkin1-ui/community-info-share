@@ -71,7 +71,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const services = (data ?? []).map((row: any) => ({
       id: row.id,
       organizationId: row.organization_id,
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
       contactEmail: row.contact_email ?? null,
       contactPhone: null,
     }));
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+     
 
     return NextResponse.json({ services });
   } catch (err) {

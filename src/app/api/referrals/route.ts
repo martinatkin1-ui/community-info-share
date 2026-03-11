@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   }
 
   // Use authenticated client (anon key + user session) so RLS is enforced.
-  const supabase = createAuthServerClient();
+  const supabase = await createAuthServerClient();
 
   // Sender organization must belong to the logged-in manager account.
   const { data: senderOrg, error: senderOrgError } = await supabase

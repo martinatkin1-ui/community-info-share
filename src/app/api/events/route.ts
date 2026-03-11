@@ -60,7 +60,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const events = (data ?? []).map((row: any) => ({
       id: row.id,
       title: row.title,
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
       categories: row.eligibility_tags ?? [],
       isScraped: row.is_scraped ?? false,
     }));
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+     
 
     return NextResponse.json({ events });
   } catch (err) {

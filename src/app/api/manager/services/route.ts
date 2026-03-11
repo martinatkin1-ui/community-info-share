@@ -43,7 +43,7 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     const services = (data ?? []).map((row: any) => ({
       id: row.id,
       title: row.title,
@@ -58,7 +58,7 @@ export async function GET() {
       organizationCity: row.organizations?.city ?? null,
       auditHistory: (row.service_audit_logs ?? []).slice(0, 5),
     }));
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+     
 
     return NextResponse.json({ services });
   } catch (err) {

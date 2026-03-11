@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 
 import { COOKIE_NAME, verifyVolunteerToken } from "@/lib/volunteer/session";
 
-export default function VolunteerPortalPage() {
-  const token = cookies().get(COOKIE_NAME)?.value;
+export default async function VolunteerPortalPage() {
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
   const session = token ? verifyVolunteerToken(token) : null;
 
   if (!session) redirect("/volunteer-signin");
