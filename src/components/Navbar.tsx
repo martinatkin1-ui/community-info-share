@@ -32,6 +32,7 @@ export default function Navbar() {
   const [isStaff, setIsStaff] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [volunteer, setVolunteer] = useState<VolunteerSession | null>(null);
+  const [copiedHref, setCopiedHref] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Check volunteer cookie via API
@@ -77,6 +78,19 @@ export default function Navbar() {
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + "/");
+  }
+
+  async function copySpecialistLink(href: string) {
+    try {
+      const absolute = `${window.location.origin}${href}`;
+      await navigator.clipboard.writeText(absolute);
+      setCopiedHref(href);
+      window.setTimeout(() => {
+        setCopiedHref((current) => (current === href ? null : current));
+      }, 1400);
+    } catch {
+      setCopiedHref(null);
+    }
   }
 
   return (
@@ -162,7 +176,7 @@ export default function Navbar() {
 
               {dropdownOpen && (
                 <div
-                  className="wm-glass absolute right-0 mt-2 w-52 rounded-xl py-1"
+                  className="wm-glass absolute right-0 mt-2 w-80 rounded-xl py-1"
                   role="menu"
                 >
                   {STAFF_LINKS.map((link) => (
@@ -180,14 +194,23 @@ export default function Navbar() {
                     Specialist Support
                   </p>
                   {SPECIALIST_SUPPORT_LINKS.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      role="menuitem"
-                      className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm text-neutral-700 hover:bg-white/80 hover:text-brand-slate"
-                    >
-                      {link.label}
-                    </Link>
+                    <div key={link.href} className="grid grid-cols-[1fr_auto] items-center gap-2 rounded-lg px-2 py-1 hover:bg-white/70">
+                      <Link
+                        href={link.href}
+                        role="menuitem"
+                        className="rounded-lg px-2 py-2 text-sm text-neutral-700 hover:text-brand-slate"
+                      >
+                        {link.label}
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => copySpecialistLink(link.href)}
+                        className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs font-medium text-neutral-600 hover:border-brand-sky/40 hover:text-brand-slate"
+                        aria-label={`Copy ${link.label} link`}
+                      >
+                        {copiedHref === link.href ? "Copied" : "Copy link"}
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -262,13 +285,22 @@ export default function Navbar() {
                   Specialist Support
                 </p>
                 {SPECIALIST_SUPPORT_LINKS.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="rounded-lg px-4 py-2.5 text-sm text-neutral-700 hover:bg-white/70 hover:text-brand-slate"
-                  >
-                    {link.label}
-                  </Link>
+                  <div key={link.href} className="grid grid-cols-[1fr_auto] items-center gap-2 rounded-lg px-1 py-1 hover:bg-white/40">
+                    <Link
+                      href={link.href}
+                      className="rounded-lg px-3 py-2.5 text-sm text-neutral-700 hover:text-brand-slate"
+                    >
+                      {link.label}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => copySpecialistLink(link.href)}
+                      className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs font-medium text-neutral-600"
+                      aria-label={`Copy ${link.label} link`}
+                    >
+                      {copiedHref === link.href ? "Copied" : "Copy"}
+                    </button>
+                  </div>
                 ))}
               </>
             )}
