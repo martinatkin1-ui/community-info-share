@@ -14,6 +14,9 @@ export interface RankedOrganization {
   websiteUrl: string | null;
   supportStackSummary: string | null;
   specialistTags: string[];
+  immediateContact: string | null;
+  selfReferralUrl: string | null;
+  isEmergencyProvider: boolean;
   quickCallPhone: string | null;
   score: number;
   scoreBreakdown: {
@@ -65,6 +68,10 @@ export async function getRankedOrganizations(categoryId: SupportCategoryId): Pro
         website_url,
         support_stack_summary,
         specialist_tags,
+        specialist_focus,
+        immediate_contact,
+        self_referral_url,
+        is_emergency_provider,
         verification_status
       )
     `)
@@ -86,6 +93,10 @@ export async function getRankedOrganizations(categoryId: SupportCategoryId): Pro
           website_url: string | null;
           support_stack_summary: string | null;
           specialist_tags: string[] | null;
+          specialist_focus: string[] | null;
+          immediate_contact: string | null;
+          self_referral_url: string | null;
+          is_emergency_provider: boolean | null;
           verification_status?: string;
         }
       | Array<{
@@ -95,6 +106,10 @@ export async function getRankedOrganizations(categoryId: SupportCategoryId): Pro
           website_url: string | null;
           support_stack_summary: string | null;
           specialist_tags: string[] | null;
+          specialist_focus: string[] | null;
+          immediate_contact: string | null;
+          self_referral_url: string | null;
+          is_emergency_provider: boolean | null;
           verification_status?: string;
         }>
       | null;
@@ -103,7 +118,10 @@ export async function getRankedOrganizations(categoryId: SupportCategoryId): Pro
     if (!org || org.verification_status !== "verified") continue;
 
     const orgId = row.organization_id as string;
-    const specialistTags = (org.specialist_tags ?? []).map((t) => normalize(t));
+    const specialistTags = [
+      ...(org.specialist_focus ?? []),
+      ...(org.specialist_tags ?? []),
+    ].map((t) => normalize(t));
     const needTags = ((row.need_tags as string[] | null) ?? []).map((t) => normalize(t));
     const textCorpus = [
       String(row.title ?? ""),
@@ -116,10 +134,13 @@ export async function getRankedOrganizations(categoryId: SupportCategoryId): Pro
 
     const primaryMatch = hasAnyKeyword(textCorpus, aliases);
     const immediateSupport =
+      org.is_emergency_provider === true ||
       row.is_crisis === true ||
       row.availability_status === "open" ||
       needTags.some((tag) => tag.includes("walk") || tag.includes("open access"));
-    const selfReferralEnabled = row.referral_method === "self_referral";
+    const selfReferralEnabled =
+      row.referral_method === "self_referral" ||
+      (typeof org.self_referral_url === "string" && org.self_referral_url.trim().length > 0);
 
     const existing = byOrg.get(orgId) ?? {
       organizationId: orgId,
@@ -127,8 +148,11 @@ export async function getRankedOrganizations(categoryId: SupportCategoryId): Pro
       city: org.city,
       websiteUrl: org.website_url,
       supportStackSummary: org.support_stack_summary,
-      specialistTags: org.specialist_tags ?? [],
-      quickCallPhone: (row.contact_phone as string | null) ?? null,
+      specialistTags: Array.from(new Set([...(org.specialist_focus ?? []), ...(org.specialist_tags ?? [])])),
+      immediateContact: org.immediate_contact,
+      selfReferralUrl: org.self_referral_url,
+      isEmergencyProvider: org.is_emergency_provider === true,
+      quickCallPhone: (row.contact_phone as string | null) ?? org.immediate_contact,
       score: 0,
       scoreBreakdown: {
         primaryMatch: false,

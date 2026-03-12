@@ -18,6 +18,14 @@ const STAFF_LINKS = [
   { label: "Referral Pathways", href: "/referrals" },
 ];
 
+const SPECIALIST_SUPPORT_LINKS = [
+  { label: "Prison Leavers", href: "/support/prison-leavers" },
+  { label: "Rehab Graduates", href: "/support/residential-rehab-graduates" },
+  { label: "Mental Health Discharge", href: "/support/mental-health-discharge" },
+  { label: "Homelessness Support", href: "/support/homelessness-support" },
+  { label: "New To Recovery", href: "/support/new-to-recovery" },
+];
+
 export default function Navbar() {
   const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -167,6 +175,20 @@ export default function Navbar() {
                       {link.label}
                     </Link>
                   ))}
+                  <div className="my-1 border-t border-white/50" />
+                  <p className="px-4 py-1 text-xs font-semibold uppercase tracking-widest text-neutral-500">
+                    Specialist Support
+                  </p>
+                  {SPECIALIST_SUPPORT_LINKS.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      role="menuitem"
+                      className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm text-neutral-700 hover:bg-white/80 hover:text-brand-slate"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
@@ -228,6 +250,18 @@ export default function Navbar() {
                   Staff &amp; Partners
                 </p>
                 {STAFF_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="rounded-lg px-4 py-2.5 text-sm text-neutral-700 hover:bg-white/70 hover:text-brand-slate"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <p className="px-4 py-1 text-xs font-semibold uppercase tracking-widest text-neutral-400">
+                  Specialist Support
+                </p>
+                {SPECIALIST_SUPPORT_LINKS.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}

@@ -20,6 +20,10 @@ const payloadSchema = z.object({
   bio: z.string().min(30).max(1200),
   websiteUrl: z.url(),
   scrapingUrls: z.string().min(1),
+  specialist_focus: z.string().min(2),
+  immediate_contact: z.string().min(7),
+  self_referral_url: z.string().optional().default(""),
+  is_emergency_provider: z.boolean(),
   facebookHandle: z.string().optional().default(""),
   instagramHandle: z.string().optional().default(""),
   xHandle: z.string().optional().default(""),
@@ -81,6 +85,18 @@ function parseScrapingUrls(input: string): string[] {
   );
 }
 
+function parseSpecialistFocus(input: string): string[] {
+  try {
+    const parsed = JSON.parse(input) as unknown;
+    const arrSchema = z.array(z.string().trim().min(2)).min(1);
+    const valid = arrSchema.safeParse(parsed);
+    if (!valid.success) return [];
+    return Array.from(new Set(valid.data.map((item) => item.trim().toLowerCase())));
+  } catch {
+    return [];
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const form = await request.formData();
@@ -90,6 +106,10 @@ export async function POST(request: Request) {
       bio: String(form.get("bio") ?? ""),
       websiteUrl: String(form.get("websiteUrl") ?? ""),
       scrapingUrls: String(form.get("scrapingUrls") ?? form.get("scrapingUrl") ?? ""),
+      specialist_focus: String(form.get("specialist_focus") ?? "[]"),
+      immediate_contact: String(form.get("immediate_contact") ?? ""),
+      self_referral_url: String(form.get("self_referral_url") ?? ""),
+      is_emergency_provider: asBoolean(form.get("is_emergency_provider")),
       facebookHandle: String(form.get("facebookHandle") ?? ""),
       instagramHandle: String(form.get("instagramHandle") ?? ""),
       xHandle: String(form.get("xHandle") ?? ""),
@@ -108,12 +128,20 @@ export async function POST(request: Request) {
 
     const payload = parsed.data;
     const scrapingUrls = parseScrapingUrls(payload.scrapingUrls);
+    const specialistFocus = parseSpecialistFocus(payload.specialist_focus);
     if (scrapingUrls.length === 0) {
       return NextResponse.json({ error: "At least one scraping URL is required." }, { status: 400 });
+    }
+    if (specialistFocus.length === 0) {
+      return NextResponse.json({ error: "Select at least one specialist focus area." }, { status: 400 });
     }
     const invalidUrl = scrapingUrls.find((url) => !z.url().safeParse(url).success);
     if (invalidUrl) {
       return NextResponse.json({ error: `Invalid scraping URL: ${invalidUrl}` }, { status: 400 });
+    }
+    const selfReferralUrl = normalizeOptional(payload.self_referral_url);
+    if (selfReferralUrl && !z.url().safeParse(selfReferralUrl).success) {
+      return NextResponse.json({ error: "Invalid self-referral URL." }, { status: 400 });
     }
 
     const primaryScrapingUrl = scrapingUrls[0];
@@ -191,6 +219,10 @@ export async function POST(request: Request) {
       p_website_url: payload.websiteUrl.trim(),
       p_scraping_url: primaryScrapingUrl,
       p_scraping_urls: scrapingUrls,
+      p_specialist_focus: specialistFocus,
+      p_immediate_contact: payload.immediate_contact.trim(),
+      p_self_referral_url: selfReferralUrl,
+      p_is_emergency_provider: payload.is_emergency_provider,
       p_org_type: payload.orgType,
       p_logo_file_name: logoFile?.name ?? null,
       p_logo_storage_path: logoStoragePath,

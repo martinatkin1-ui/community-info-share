@@ -49,6 +49,10 @@ export interface OnboardingFormValues {
   xHandle: string;
   websiteUrl: string;
   scrapingUrls: string;
+  specialist_focus: string[];
+  immediate_contact: string;
+  self_referral_url: string;
+  is_emergency_provider: boolean;
   coreServices: CoreServiceDraft[];
   dataSharingAgreement: boolean;
   warmHandoverAcknowledged: boolean;
@@ -150,6 +154,19 @@ const coreServiceSchema = z
   );
 
 export const servicesSchema = z.object({
+  specialist_focus: z.array(z.string().trim().min(2)).min(1, "Select at least one specialist focus area."),
+  immediate_contact: z
+    .string()
+    .trim()
+    .min(7, "Add a direct immediate contact number for urgent triage."),
+  self_referral_url: z
+    .string()
+    .trim()
+    .max(200)
+    .refine((value) => value.length === 0 || (URL_RE.test(value) && z.url().safeParse(value).success), {
+      message: "Self-referral URL must start with http:// or https://.",
+    }),
+  is_emergency_provider: z.boolean(),
   coreServices: z.array(coreServiceSchema).min(1, "Add at least one core service."),
 });
 

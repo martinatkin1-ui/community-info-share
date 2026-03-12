@@ -28,6 +28,22 @@ export default function StepVerification() {
           <li>You can start receiving Warm Handover referrals securely.</li>
         </ul>
       </div>
+
+      <div className="rounded-2xl border border-brand-sky/40 bg-white p-5">
+        <h4 className="text-sm font-semibold text-brand-slate">Specialist visibility snapshot</h4>
+        <p className="mt-2 text-sm text-brand-slate/80">
+          Focus areas: {values.specialist_focus.length > 0 ? values.specialist_focus.join(", ") : "None selected"}
+        </p>
+        <p className="mt-1 text-sm text-brand-slate/80">
+          Immediate contact: {values.immediate_contact || "Not provided"}
+        </p>
+        <p className="mt-1 text-sm text-brand-slate/80">
+          Self-referral URL: {values.self_referral_url || "Not provided"}
+        </p>
+        <p className="mt-1 text-sm text-brand-slate/80">
+          Emergency provider: {values.is_emergency_provider ? "Yes" : "No"}
+        </p>
+      </div>
     </section>
   );
 }

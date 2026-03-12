@@ -25,6 +25,14 @@ const AVAILABILITY_OPTIONS = [
   { value: "waitlist_closed", label: "Waitlist Closed" },
 ] as const;
 
+const SPECIALIST_FOCUS_OPTIONS = [
+  { value: "prison-leavers", label: "Prison Leavers" },
+  { value: "residential-rehab-graduates", label: "Residential Rehab Graduates" },
+  { value: "mental-health-discharge", label: "Mental Health Discharge" },
+  { value: "homelessness-support", label: "Homelessness Support" },
+  { value: "new-to-recovery", label: "New to Recovery" },
+] as const;
+
 function newService(): CoreServiceDraft {
   return {
     title: "",
@@ -42,6 +50,18 @@ function newService(): CoreServiceDraft {
 
 export default function OnboardingStep_Services() {
   const { values, errors, onFieldChange } = useOnboarding();
+
+  function toggleSpecialistFocus(value: string) {
+    if (values.specialist_focus.includes(value)) {
+      onFieldChange(
+        "specialist_focus",
+        values.specialist_focus.filter((item) => item !== value)
+      );
+      return;
+    }
+
+    onFieldChange("specialist_focus", [...values.specialist_focus, value]);
+  }
 
   function updateService(index: number, patch: Partial<CoreServiceDraft>) {
     const next = [...values.coreServices];
@@ -65,6 +85,73 @@ export default function OnboardingStep_Services() {
       <p className="text-sm text-brand-slate/80">
         List your core long-term services so residents can find support even when there is no event date.
       </p>
+
+      <div className="rounded-xl border border-brand-coral/30 bg-brand-coral/5 p-4 space-y-3">
+        <h3 className="text-sm font-semibold text-brand-slate">Specialist Visibility For Public Routing</h3>
+        <p className="text-xs text-brand-slate/80">
+          These details power urgent matching on specialist support pages.
+        </p>
+
+        <div>
+          <p className="text-xs font-semibold text-brand-slate">Specialist Focus</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {SPECIALIST_FOCUS_OPTIONS.map((option) => {
+              const checked = values.specialist_focus.includes(option.value);
+              return (
+                <label
+                  key={option.value}
+                  className="flex items-center gap-2 rounded-lg border border-brand-sky/30 bg-white px-3 py-2 text-xs text-brand-slate"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleSpecialistFocus(option.value)}
+                    className="h-4 w-4 accent-brand-slate"
+                  />
+                  {option.label}
+                </label>
+              );
+            })}
+          </div>
+          {errors.specialist_focus && <p className="mt-1 text-xs text-red-600">{errors.specialist_focus}</p>}
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="block text-xs font-semibold text-brand-slate">Immediate Contact Number</label>
+            <input
+              type="tel"
+              value={values.immediate_contact}
+              onChange={(e) => onFieldChange("immediate_contact", e.target.value)}
+              className="mt-1 w-full rounded-lg border border-brand-sky/40 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-sky"
+              placeholder="01902 123456"
+            />
+            {errors.immediate_contact && <p className="mt-1 text-xs text-red-600">{errors.immediate_contact}</p>}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-brand-slate">Public Self-Referral URL (optional)</label>
+            <input
+              type="url"
+              value={values.self_referral_url}
+              onChange={(e) => onFieldChange("self_referral_url", e.target.value)}
+              className="mt-1 w-full rounded-lg border border-brand-sky/40 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-sky"
+              placeholder="https://your-org.org/self-referral"
+            />
+            {errors.self_referral_url && <p className="mt-1 text-xs text-red-600">{errors.self_referral_url}</p>}
+          </div>
+        </div>
+
+        <label className="inline-flex items-center gap-2 rounded-lg border border-brand-amber/40 bg-brand-cream px-3 py-2 text-xs font-medium text-brand-slate">
+          <input
+            type="checkbox"
+            checked={values.is_emergency_provider}
+            onChange={(e) => onFieldChange("is_emergency_provider", e.target.checked)}
+            className="h-4 w-4 accent-red-600"
+          />
+          We provide emergency / same-day specialist support
+        </label>
+      </div>
 
       {errors.coreServices && <p className="text-xs text-red-600">{errors.coreServices}</p>}
 

@@ -39,6 +39,10 @@ const INITIAL_VALUES: OnboardingFormValues = {
   xHandle: "",
   websiteUrl: "",
   scrapingUrls: "",
+  specialist_focus: [],
+  immediate_contact: "",
+  self_referral_url: "",
+  is_emergency_provider: false,
   coreServices: [
     {
       title: "",
@@ -162,6 +166,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       formData.set("bio", values.bio.trim());
       formData.set("websiteUrl", values.websiteUrl.trim());
       formData.set("scrapingUrls", values.scrapingUrls.trim());
+      formData.set("specialist_focus", JSON.stringify(values.specialist_focus));
+      formData.set("immediate_contact", values.immediate_contact.trim());
+      formData.set("self_referral_url", values.self_referral_url.trim());
+      formData.set("is_emergency_provider", String(values.is_emergency_provider));
       formData.set("facebookHandle", values.facebookHandle.trim());
       formData.set("instagramHandle", values.instagramHandle.trim());
       formData.set("xHandle", values.xHandle.trim());

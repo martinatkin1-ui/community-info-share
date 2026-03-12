@@ -1,11 +1,11 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import {
   getRankedOrganizations,
   type SupportCategoryId,
 } from "@/lib/organizations/ranking";
+import CompassionateSupportHeader from "@/components/support/CompassionateSupportHeader";
 
 const CATEGORY_CONTENT: Record<
   SupportCategoryId,
@@ -57,6 +57,12 @@ function toTelHref(phone: string) {
   return `tel:${phone.replace(/\s+/g, "")}`;
 }
 
+const EMERGENCY_ACTIONS = [
+  { label: "Call 999 (Immediate danger)", href: "tel:999" },
+  { label: "NHS 111 (Urgent medical advice)", href: "tel:111" },
+  { label: "Samaritans 116 123", href: "tel:116123" },
+];
+
 export default async function SupportCategoryPage({
   params,
 }: {
@@ -70,30 +76,113 @@ export default async function SupportCategoryPage({
   const key = category as SupportCategoryId;
   const content = CATEGORY_CONTENT[key];
   const organizations = await getRankedOrganizations(key);
+  const topMatches = organizations.slice(0, 3);
+  const emergencyProviders = organizations.filter((org) => org.isEmergencyProvider || !!org.quickCallPhone);
 
   return (
     <main className="space-y-6 pb-12">
-      <header className="relative overflow-hidden rounded-3xl border border-white/30 text-white">
-        <Image
-          src={content.imageUrl}
-          alt=""
-          aria-hidden="true"
-          fill
-          sizes="100vw"
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-black/20" aria-hidden="true" />
-        <div className="relative px-6 py-10 sm:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">Specialist Support Route</p>
-          <h1 className="mt-2 text-4xl font-bold leading-tight sm:text-5xl">{content.title}</h1>
-          <p className="mt-4 max-w-3xl text-lg leading-relaxed text-white/95">{content.overview}</p>
-          <p className="mt-4 inline-flex rounded-full bg-white/20 px-4 py-2 text-base font-semibold">{content.ctaLabel}</p>
-        </div>
-      </header>
+      <CompassionateSupportHeader
+        title={content.title}
+        overview={content.overview}
+        imageUrl={content.imageUrl}
+        ctaLabel={content.ctaLabel}
+      />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {organizations.map((org) => (
+      <section className="wm-card space-y-4 border-red-200 bg-red-50/70">
+        <h2 className="text-2xl font-semibold text-red-900">Need help right now?</h2>
+        <p className="text-sm text-red-800">
+          If there is immediate risk, call emergency services first. You can then use the quick-call partners below for same-day local support.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {EMERGENCY_ACTIONS.map((action) => (
+            <a key={action.href} href={action.href} className="wm-btn bg-red-700 hover:bg-red-800">
+              {action.label}
+            </a>
+          ))}
+        </div>
+        {emergencyProviders.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {emergencyProviders.slice(0, 6).map((org) => (
+              <article key={`emergency-${org.organizationId}`} className="rounded-xl border border-red-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-wm-slate">{org.organizationName}</h3>
+                <p className="mt-1 text-xs text-neutral-600">{org.city ?? "West Midlands"}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {org.quickCallPhone && (
+                    <a href={toTelHref(org.quickCallPhone)} className="wm-btn text-xs">
+                      Call now
+                    </a>
+                  )}
+                  {org.selfReferralUrl && (
+                    <a
+                      href={org.selfReferralUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="wm-btn-muted text-xs"
+                    >
+                      Self-referral
+                    </a>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold text-wm-slate">Top 3 best matches</h2>
+          <p className="mt-1 text-sm text-neutral-600">Ranked using relevance 50%, immediate support 30%, and self-referral 20%.</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {topMatches.map((org) => (
+            <article key={`top-${org.organizationId}`} className="wm-glass rounded-2xl border-2 border-wm-teal/30 p-5">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-xl font-semibold text-wm-slate">{org.organizationName}</h3>
+                <span className="rounded-full bg-wm-teal/15 px-2.5 py-1 text-xs font-semibold text-wm-teal">
+                  Score {org.score}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-neutral-600">{org.city ?? "West Midlands"}</p>
+              <p className="mt-3 text-base leading-relaxed text-neutral-800">
+                {org.supportStackSummary ?? "Local partner able to support with practical next steps and warm handovers."}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {org.quickCallPhone ? (
+                  <a href={toTelHref(org.quickCallPhone)} className="wm-btn text-sm">
+                    Call now
+                  </a>
+                ) : null}
+                {org.selfReferralUrl ? (
+                  <a
+                    href={org.selfReferralUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="wm-btn-muted text-sm"
+                  >
+                    Self-referral
+                  </a>
+                ) : (
+                  <Link
+                    href={`/referrals?toOrganizationId=${org.organizationId}&selfReferral=1`}
+                    className="wm-btn-muted text-sm"
+                  >
+                    Referral form
+                  </Link>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold text-wm-slate">Full support directory</h2>
+          <p className="mt-1 text-sm text-neutral-600">Browse every verified partner matched to this pathway.</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {organizations.map((org) => (
           <article key={org.organizationId} className="wm-glass rounded-2xl p-5">
             <div className="flex items-start justify-between gap-2">
               <h2 className="text-xl font-semibold text-wm-slate">{org.organizationName}</h2>
@@ -118,12 +207,23 @@ export default async function SupportCategoryPage({
             )}
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link
-                href={`/referrals?toOrganizationId=${org.organizationId}&selfReferral=1`}
-                className="wm-btn text-sm"
-              >
-                Self-Referral
-              </Link>
+              {org.selfReferralUrl ? (
+                <a
+                  href={org.selfReferralUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="wm-btn text-sm"
+                >
+                  Self-Referral
+                </a>
+              ) : (
+                <Link
+                  href={`/referrals?toOrganizationId=${org.organizationId}&selfReferral=1`}
+                  className="wm-btn text-sm"
+                >
+                  Self-Referral
+                </Link>
+              )}
               {org.quickCallPhone ? (
                 <a href={toTelHref(org.quickCallPhone)} className="wm-btn-muted text-sm">
                   Quick Call
@@ -142,6 +242,7 @@ export default async function SupportCategoryPage({
             </div>
           </article>
         ))}
+        </div>
       </section>
 
       {organizations.length === 0 && (
