@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { z } from "zod";
 
 import { requireSuperAdminAccess } from "@/lib/auth/adminAccess";
@@ -8,22 +9,11 @@ import { createServerClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 const inviteSchema = z.object({
-  email: z.string().email(),
-  organizationId: z.string().uuid().optional(),
-  redirectTo: z.string().url().optional(),
+  organizationId: z.string().uuid(),
 });
 
-function getInviteRedirectUrl(request: Request, redirectTo?: string) {
-  if (redirectTo) {
-    return redirectTo;
-  }
-
-  if (process.env.MANAGER_INVITE_REDIRECT_TO) {
-    return process.env.MANAGER_INVITE_REDIRECT_TO;
-  }
-
-  const origin = request.headers.get("origin") ?? new URL(request.url).origin;
-  return `${origin}/manager-signin`;
+function hashToken(token: string) {
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 export async function POST(request: Request) {
@@ -49,60 +39,49 @@ export async function POST(request: Request) {
 
     const supabase = createServerClient();
     const payload = parsed.data;
-    const inviteRedirectUrl = getInviteRedirectUrl(request, payload.redirectTo);
+    const { data: org, error: orgError } = await supabase
+      .from("organizations")
+      .select("id, metadata")
+      .eq("id", payload.organizationId)
+      .single();
 
-    const { data, error } = await supabase.auth.admin.generateLink({
-      type: "invite",
-      email: payload.email,
-      options: {
-        redirectTo: inviteRedirectUrl,
-        data: {
-          role: "manager",
-          organizationId: payload.organizationId ?? null,
-        },
-      },
+    if (orgError || !org) {
+      return NextResponse.json({ error: orgError?.message ?? "Organization not found." }, { status: 404 });
+    }
+
+    const rawToken = crypto.randomBytes(32).toString("base64url");
+    const tokenHash = hashToken(rawToken);
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
+    const { error: insertError } = await supabase.from("org_claim_links").insert({
+      organization_id: payload.organizationId,
+      token_hash: tokenHash,
+      expires_at: expiresAt,
     });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (insertError) {
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    if (payload.organizationId) {
-      const { data: org, error: fetchError } = await supabase
-        .from("organizations")
-        .select("metadata")
-        .eq("id", payload.organizationId)
-        .single();
+    const origin = request.headers.get("origin") ?? new URL(request.url).origin;
+    const inviteUrl = `${origin}/claim-org/${rawToken}`;
 
-      if (!fetchError) {
-        const nextMetadata = {
-          ...(org?.metadata ?? {}),
-          managerInvite: {
-            invitedEmail: payload.email,
-            invitedAt: new Date().toISOString(),
-          },
-        };
-
-        await supabase
-          .from("organizations")
-          .update({ metadata: nextMetadata, email: payload.email })
-          .eq("id", payload.organizationId);
-      }
-    }
-
-    const properties = (data as { properties?: { action_link?: string } } | null)?.properties;
-    const inviteUrl = properties?.action_link;
-    if (!inviteUrl) {
-      return NextResponse.json(
-        { error: "Invite link could not be generated." },
-        { status: 500 }
-      );
-    }
+    const nextMetadata = {
+      ...(org.metadata ?? {}),
+      managerInvite: {
+        generatedAt: new Date().toISOString(),
+        expiresAt,
+      },
+    };
+    await supabase
+      .from("organizations")
+      .update({ metadata: nextMetadata })
+      .eq("id", payload.organizationId);
 
     return NextResponse.json({
-      message: "Manager invite link generated.",
+      message: "Secure manager claim link generated.",
       inviteUrl,
-      user: data?.user ?? null,
+      expiresAt,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Server error.";

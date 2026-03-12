@@ -13,7 +13,6 @@ interface InviteManagerPanelProps {
 }
 
 export default function InviteManagerPanel({ organizations }: InviteManagerPanelProps) {
-  const [email, setEmail] = useState("");
   const [organizationId, setOrganizationId] = useState(organizations[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -30,13 +29,12 @@ export default function InviteManagerPanel({ organizations }: InviteManagerPanel
       const res = await fetch("/api/admin/invite-manager", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, organizationId: organizationId || undefined }),
+        body: JSON.stringify({ organizationId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to send invite.");
       setMessage(data.message ?? "Invite generated.");
       setInviteUrl(data.inviteUrl ?? null);
-      setEmail("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error.");
     } finally {
@@ -48,34 +46,27 @@ export default function InviteManagerPanel({ organizations }: InviteManagerPanel
     <section className="rounded-2xl border border-neutral-200 bg-white p-4">
       <h2 className="text-lg font-semibold text-neutral-900">Invite Organization Manager</h2>
       <p className="mt-1 text-sm text-neutral-600">
-        Generate a one-time signup link you can share manually via email, SMS, or WhatsApp.
+        Generate a 48-hour secure claim link you can share via SMS or WhatsApp.
       </p>
 
-      <form onSubmit={submitInvite} className="mt-4 grid gap-3 sm:grid-cols-[1.2fr,1fr,auto]">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="manager@organisation.org"
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          required
-        />
+      <form onSubmit={submitInvite} className="mt-4 grid gap-3 sm:grid-cols-[1fr,auto]">
         <select
           value={organizationId}
           onChange={(e) => setOrganizationId(e.target.value)}
           className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          required
         >
-          <option value="">No organization selected</option>
+          <option value="">Select organization</option>
           {organizations.map((org) => (
             <option key={org.id} value={org.id}>{org.name}</option>
           ))}
         </select>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !organizationId}
           className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-50"
         >
-          {loading ? "Generating..." : "Generate Invite Link"}
+          {loading ? "Generating..." : "Generate Claim Link"}
         </button>
       </form>
 
@@ -88,7 +79,7 @@ export default function InviteManagerPanel({ organizations }: InviteManagerPanel
           <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-neutral-200 bg-white p-5 shadow-2xl">
             <Dialog.Title className="text-lg font-semibold text-neutral-900">Invite Link Ready</Dialog.Title>
             <p className="mt-1 text-sm text-neutral-600">
-              Share this one-time onboarding URL with the manager.
+              Share this one-time 48-hour claim URL with the manager.
             </p>
 
             <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-3">

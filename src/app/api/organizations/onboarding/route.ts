@@ -19,7 +19,7 @@ const payloadSchema = z.object({
   ]),
   bio: z.string().min(30).max(1200),
   websiteUrl: z.url(),
-  scrapingUrl: z.url(),
+  scrapingUrls: z.string().min(1),
   facebookHandle: z.string().optional().default(""),
   instagramHandle: z.string().optional().default(""),
   xHandle: z.string().optional().default(""),
@@ -55,7 +55,7 @@ const serviceSchema = z
     { message: "Self-referral services must provide contact details." }
   );
 
-const LOGO_BUCKET = "organization-logos";
+const LOGO_BUCKET = process.env.ONBOARDING_LOGO_BUCKET ?? "organization-logos";
 
 function normalizeOptional(value: string | null | undefined): string | null {
   const text = typeof value === "string" ? value.trim() : "";
@@ -70,6 +70,17 @@ function safeSlug(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+function parseScrapingUrls(input: string): string[] {
+  return Array.from(
+    new Set(
+      input
+        .split(/[\n,]+/)
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
 export async function POST(request: Request) {
   try {
     const form = await request.formData();
@@ -78,7 +89,7 @@ export async function POST(request: Request) {
       orgType: String(form.get("orgType") ?? ""),
       bio: String(form.get("bio") ?? ""),
       websiteUrl: String(form.get("websiteUrl") ?? ""),
-      scrapingUrl: String(form.get("scrapingUrl") ?? ""),
+      scrapingUrls: String(form.get("scrapingUrls") ?? form.get("scrapingUrl") ?? ""),
       facebookHandle: String(form.get("facebookHandle") ?? ""),
       instagramHandle: String(form.get("instagramHandle") ?? ""),
       xHandle: String(form.get("xHandle") ?? ""),
@@ -96,6 +107,16 @@ export async function POST(request: Request) {
     }
 
     const payload = parsed.data;
+    const scrapingUrls = parseScrapingUrls(payload.scrapingUrls);
+    if (scrapingUrls.length === 0) {
+      return NextResponse.json({ error: "At least one scraping URL is required." }, { status: 400 });
+    }
+    const invalidUrl = scrapingUrls.find((url) => !z.url().safeParse(url).success);
+    if (invalidUrl) {
+      return NextResponse.json({ error: `Invalid scraping URL: ${invalidUrl}` }, { status: 400 });
+    }
+
+    const primaryScrapingUrl = scrapingUrls[0];
     let servicesInput: unknown;
     try {
       servicesInput = JSON.parse(payload.servicesJson);
@@ -115,6 +136,7 @@ export async function POST(request: Request) {
     const supabase = createServerClient();
     const logoFileEntry = form.get("logoFile");
     const logoFile = logoFileEntry instanceof File ? logoFileEntry : null;
+    const warnings: string[] = [];
 
     let logoStoragePath: string | null = null;
     let logoPublicUrl: string | null = null;
@@ -132,15 +154,22 @@ export async function POST(request: Request) {
         });
 
       if (uploadError) {
-        return NextResponse.json(
-          { error: `Logo upload failed: ${uploadError.message}` },
-          { status: 500 }
-        );
+        const isMissingBucket = /bucket\s+not\s+found/i.test(uploadError.message);
+        if (isMissingBucket) {
+          warnings.push(
+            "Logo upload skipped because the storage bucket is not configured yet. Verification will continue without a logo."
+          );
+        } else {
+          return NextResponse.json(
+            { error: `Logo upload failed: ${uploadError.message}` },
+            { status: 500 }
+          );
+        }
+      } else {
+        const publicUrlInfo = supabase.storage.from(LOGO_BUCKET).getPublicUrl(path);
+        logoStoragePath = path;
+        logoPublicUrl = publicUrlInfo.data.publicUrl;
       }
-
-      const publicUrlInfo = supabase.storage.from(LOGO_BUCKET).getPublicUrl(path);
-      logoStoragePath = path;
-      logoPublicUrl = publicUrlInfo.data.publicUrl;
     }
 
     const servicesPayload = services.map((service) => ({
@@ -160,7 +189,8 @@ export async function POST(request: Request) {
       p_name: payload.name.trim(),
       p_description: payload.bio.trim(),
       p_website_url: payload.websiteUrl.trim(),
-      p_scraping_url: payload.scrapingUrl.trim(),
+      p_scraping_url: primaryScrapingUrl,
+      p_scraping_urls: scrapingUrls,
       p_org_type: payload.orgType,
       p_logo_file_name: logoFile?.name ?? null,
       p_logo_storage_path: logoStoragePath,
@@ -188,6 +218,7 @@ export async function POST(request: Request) {
       status: "pending",
       message:
         "Submitted for verification. A human admin will review your profile within 24 hours.",
+      warnings,
     });
   } catch (err) {
     return NextResponse.json(

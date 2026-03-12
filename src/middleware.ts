@@ -15,6 +15,9 @@ const VOLUNTEER_ALLOWED_PATHS = new Set(["/events", "/referrals", "/organization
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isVolunteer = Boolean(request.cookies.get(VOLUNTEER_COOKIE)?.value);
+  const hasSupabaseEnv = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
 
   if (isVolunteer) {
     const isManagerArea = pathname.startsWith("/admin") || pathname.startsWith("/dashboard") || pathname.startsWith("/service-status") || pathname.startsWith("/onboarding") || pathname.startsWith("/scrape-");
@@ -37,6 +40,10 @@ export async function middleware(request: NextRequest) {
     if (!isApi && !publicRootAllowed && !pathname.startsWith("/manager-") && !pathname.startsWith("/client-signin")) {
       return NextResponse.redirect(new URL("/volunteer-portal", request.url));
     }
+  }
+
+  if (!hasSupabaseEnv) {
+    return NextResponse.next();
   }
 
   return updateSession(request);

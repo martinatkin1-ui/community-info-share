@@ -10,6 +10,7 @@ interface OrgDetail {
   bio: string | null;
   websiteUrl: string | null;
   scrapingUrl: string | null;
+  scrapingUrls?: string[];
   email: string | null;
   phone: string | null;
   socials: {
@@ -130,7 +131,7 @@ export default function VerificationDrawer({
 
                 <dl className="mt-3 space-y-1 text-sm">
                   <div className="flex gap-2"><dt className="font-medium text-neutral-800">Website:</dt><dd className="min-w-0 break-all text-neutral-600">{org.websiteUrl ?? "-"}</dd></div>
-                  <div className="flex gap-2"><dt className="font-medium text-neutral-800">Scraping URL:</dt><dd className="min-w-0 break-all text-neutral-600">{org.scrapingUrl ?? "-"}</dd></div>
+                  <div className="flex gap-2"><dt className="font-medium text-neutral-800">Scraping URLs:</dt><dd className="min-w-0 break-all text-neutral-600">{org.scrapingUrls?.length ? org.scrapingUrls.join(", ") : org.scrapingUrl ?? "-"}</dd></div>
                   <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-neutral-500" /><dd className="text-neutral-600">{org.email ?? "-"}</dd></div>
                   <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-neutral-500" /><dd className="text-neutral-600">{org.phone ?? "-"}</dd></div>
                 </dl>

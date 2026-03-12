@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import HeroBanner from "@/components/HeroBanner";
 
 interface PublicOrg {
   id: string;
@@ -35,10 +36,13 @@ export default function OrganizationsPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
-      <h1 className="text-3xl font-semibold">Organizations</h1>
-      <p className="mt-3 text-neutral-600">
-        Browse verified community organizations and view their wraparound offer of services and events.
-      </p>
+      <HeroBanner
+        eyebrow="Community Directory"
+        title="Verified Organizations"
+        description="Browse trusted local organizations and explore their wraparound offer of services, events, and community support."
+        imageUrl="/images/local-area/library-of-birmingham.jpg"
+        imagePositionClassName="object-[center_46%] sm:object-[center_35%]"
+      />
 
       {loading && <p className="mt-6 text-sm text-neutral-500">Loading organizations...</p>}
       {error && <p className="mt-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}

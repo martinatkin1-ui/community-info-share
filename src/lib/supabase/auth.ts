@@ -47,7 +47,15 @@ export async function getAuthenticatedUser() {
 }
 
 export async function updateSession(request: NextRequest) {
-  const { url, anonKey } = getAuthEnv();
+  let authEnv: { url: string; anonKey: string };
+  try {
+    authEnv = getAuthEnv();
+  } catch {
+    // Fail open in environments where Supabase isn't configured (e.g. local previews).
+    return NextResponse.next();
+  }
+
+  const { url, anonKey } = authEnv;
 
   let response = NextResponse.next({ request });
 
@@ -64,6 +72,10 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    // Session refresh failures should not block page rendering.
+  }
   return response;
 }

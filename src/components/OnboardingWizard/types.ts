@@ -48,10 +48,23 @@ export interface OnboardingFormValues {
   instagramHandle: string;
   xHandle: string;
   websiteUrl: string;
-  scrapingUrl: string;
+  scrapingUrls: string;
   coreServices: CoreServiceDraft[];
   dataSharingAgreement: boolean;
   warmHandoverAcknowledged: boolean;
+}
+
+const URL_RE = /^https?:\/\//i;
+
+function parseScrapingUrls(value: string): string[] {
+  return Array.from(
+    new Set(
+      value
+        .split(/[\n,]+/)
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+    )
+  );
 }
 
 export const identitySchema = z.object({
@@ -59,22 +72,48 @@ export const identitySchema = z.object({
   orgType: z.enum(ORG_TYPES),
 });
 
-const optionalHandle = z
-  .string()
-  .trim()
-  .max(50, "Handle is too long.")
-  .regex(/^$|^[A-Za-z0-9_.]{1,50}$/, "Use only letters, numbers, underscores, or dots.");
+const SOCIAL_HANDLE_RE = /^@?[A-Za-z0-9_.]{1,50}$/;
+
+function optionalSocial(platform: "facebook" | "instagram" | "x") {
+  const platformUrlPattern =
+    platform === "facebook"
+      ? /^(?:https?:\/\/)?(?:www\.)?(?:facebook\.com|fb\.com)\/[A-Za-z0-9_.]{1,80}\/?$/i
+      : platform === "instagram"
+        ? /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/[A-Za-z0-9_.]{1,80}\/?$/i
+        : /^(?:https?:\/\/)?(?:www\.)?(?:x\.com|twitter\.com)\/[A-Za-z0-9_.]{1,80}\/?$/i;
+
+  return z
+    .string()
+    .trim()
+    .max(120, "Value is too long.")
+    .refine((value) => {
+      if (!value) return true;
+      return SOCIAL_HANDLE_RE.test(value) || platformUrlPattern.test(value);
+    }, "Enter a handle, @handle, or full profile URL.");
+}
 
 export const vibeSchema = z.object({
   bio: z.string().min(30, "Bio should be at least 30 characters.").max(1200),
-  facebookHandle: optionalHandle,
-  instagramHandle: optionalHandle,
-  xHandle: optionalHandle,
+  facebookHandle: optionalSocial("facebook"),
+  instagramHandle: optionalSocial("instagram"),
+  xHandle: optionalSocial("x"),
 });
 
 export const dataEngineSchema = z.object({
   websiteUrl: z.url({ message: "Enter a valid website URL (https://...)." }),
-  scrapingUrl: z.url({ message: "Enter a valid events URL (https://...)." }),
+  scrapingUrls: z
+    .string()
+    .trim()
+    .min(1, "Add at least one events/groups URL.")
+    .refine((value) => parseScrapingUrls(value).length > 0, "Add at least one events/groups URL.")
+    .refine(
+      (value) => parseScrapingUrls(value).every((url) => URL_RE.test(url)),
+      "Each URL must start with http:// or https://."
+    )
+    .refine(
+      (value) => parseScrapingUrls(value).every((url) => z.url().safeParse(url).success),
+      "One or more scraping URLs are invalid."
+    ),
 });
 
 const coreServiceSchema = z

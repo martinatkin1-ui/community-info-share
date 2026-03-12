@@ -3,7 +3,7 @@
  *
  * Cookies are signed with HMAC-SHA256 so they cannot be forged.
  * Set VOLUNTEER_SESSION_SECRET in your environment (required in production).
- * Access keys are 6-character uppercase alphanumeric strings (no I/O/1/0).
+ * Access keys are 8-character uppercase alphanumeric strings (no I/O/1/0).
  */
 
 import { createHmac, randomBytes } from "crypto";
@@ -42,15 +42,15 @@ function secret(): string {
   return s ?? "dev-insecure-change-me";
 }
 
-/** Generate a random 6-character access key code. */
+/** Generate a random 8-character access key code. */
 export function generateAccessKeyCode(): string {
-  const bytes = randomBytes(6);
+  const bytes = randomBytes(8);
   return Array.from(bytes, (b) => KEY_CHARS[b % KEY_CHARS.length]).join("");
 }
 
 /** Canonicalize user-entered key for reliable comparisons. */
 export function normalizeAccessKeyCode(value: string): string {
-  return value.replace(/[\s\-]/g, "").toUpperCase().slice(0, 6);
+  return value.replace(/[\s\-]/g, "").toUpperCase().slice(0, 8);
 }
 
 /** HMAC hash used for DB storage and lookups (keeps plaintext out of DB). */

@@ -78,12 +78,9 @@ function ManagerSigninContent() {
           {loading ? "Signing in..." : "Continue"}
         </button>
 
-        <a
-          href="/manager-accept-invite"
-          className="block text-center text-sm text-neutral-600 underline-offset-2 hover:text-neutral-900 hover:underline"
-        >
-          Opened an invite link? Set your password here.
-        </a>
+        <p className="text-center text-sm text-neutral-600">
+          Need access? Ask an admin to generate a 48-hour secure claim link from the Partner Portal.
+        </p>
       </form>
     </main>
   );

@@ -11,6 +11,8 @@ export interface Organization {
   name: string;
   city: string | null;
   scrapingUrl: string | null;
+  specialistTags?: string[];
+  supportStackSummary?: string | null;
   verificationStatus: VerificationStatus;
 }
 

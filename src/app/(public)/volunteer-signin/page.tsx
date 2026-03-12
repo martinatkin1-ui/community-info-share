@@ -43,7 +43,7 @@ export default function VolunteerSignInPage() {
           </div>
           <h1 className="text-2xl font-bold text-brand-slate">Volunteer Access</h1>
           <p className="text-sm text-neutral-500">
-            Enter your organisation&rsquo;s 6-character access key to open the
+            Enter your organisation&rsquo;s 8-character access key to open the
             volunteer view.
           </p>
         </div>
@@ -58,8 +58,8 @@ export default function VolunteerSignInPage() {
               type="text"
               value={keyCode}
               onChange={(e) => setKeyCode(e.target.value.toUpperCase())}
-              placeholder="e.g. A3K9WX"
-              maxLength={10}
+              placeholder="e.g. A3K9WX7P"
+              maxLength={12}
               autoComplete="off"
               spellCheck={false}
               className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-center text-2xl font-mono tracking-[0.3em] uppercase shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-slate"
@@ -75,7 +75,7 @@ export default function VolunteerSignInPage() {
 
           <button
             type="submit"
-            disabled={loading || keyCode.trim().length < 4}
+            disabled={loading || keyCode.replace(/[\s\-]/g, "").length < 8}
             className="w-full rounded-xl bg-brand-slate py-3 text-sm font-semibold text-white transition hover:bg-brand-slate/90 disabled:opacity-50"
           >
             {loading ? "Verifying…" : "Enter Volunteer View"}

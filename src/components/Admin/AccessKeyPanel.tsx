@@ -85,7 +85,7 @@ export default function AccessKeyPanel({ organizations }: AccessKeyPanelProps) {
     <section className="rounded-2xl border border-neutral-200 bg-white p-4">
       <h2 className="text-lg font-semibold text-neutral-900">Volunteer Access Keys</h2>
       <p className="mt-1 text-sm text-neutral-600">
-        Generate or rotate 6-character organisation referral tokens. Each token expires every 90 days.
+        Generate or rotate 8-character organisation referral tokens. Each token expires every 90 days.
       </p>
 
       <form onSubmit={generateKey} className="mt-4 grid gap-3 sm:grid-cols-[1fr,auto]">

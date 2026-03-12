@@ -73,17 +73,17 @@ export default function Navbar() {
 
   return (
     <nav
-      className="sticky top-0 z-50 border-b border-neutral-200/80 bg-[#FFFBF0]/95 backdrop-blur-sm"
+      className="sticky top-0 z-50 border-b border-white/40 bg-[#f2ecdf]/90 backdrop-blur-md"
       aria-label="Main navigation"
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
 
         {/* Brand */}
         <Link
-          href="/"
+          href="/events"
           className="flex items-center gap-2 text-sm font-bold tracking-tight text-brand-slate"
         >
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-brand-slate text-xs font-black text-[#FFFBF0]">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-brand-slate text-xs font-black text-white shadow-sm">
             WM
           </span>
           <span className="hidden sm:block">Wellbeing Portal</span>
@@ -100,8 +100,8 @@ export default function Navbar() {
               className={`
                 rounded-lg px-4 py-2 text-sm font-medium transition-colors
                 ${isActive(tab.href)
-                  ? "bg-brand-slate text-white"
-                  : "text-neutral-600 hover:bg-neutral-100 hover:text-brand-slate"
+                  ? "bg-brand-slate text-white shadow-sm"
+                  : "text-neutral-700 hover:bg-white/70 hover:text-brand-slate"
                 }
               `}
             >
@@ -137,7 +137,7 @@ export default function Navbar() {
                 onClick={() => setDropdownOpen((o) => !o)}
                 aria-expanded={dropdownOpen}
                 aria-haspopup="true"
-                className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50"
+                className="flex items-center gap-1.5 rounded-lg border border-white/50 bg-white/80 px-3 py-2 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-white"
               >
                 Staff &amp; Partners
                 <svg
@@ -154,7 +154,7 @@ export default function Navbar() {
 
               {dropdownOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-52 rounded-xl border border-neutral-200 bg-white py-1 shadow-lg"
+                  className="wm-glass absolute right-0 mt-2 w-52 rounded-xl py-1"
                   role="menu"
                 >
                   {STAFF_LINKS.map((link) => (
@@ -162,7 +162,7 @@ export default function Navbar() {
                       key={link.href}
                       href={link.href}
                       role="menuitem"
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-brand-slate"
+                      className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm text-neutral-700 hover:bg-white/80 hover:text-brand-slate"
                     >
                       {link.label}
                     </Link>
@@ -176,7 +176,7 @@ export default function Navbar() {
           {!volunteer && !isStaff && (
             <Link
               href="/volunteer-signin"
-              className="hidden rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-50 hover:text-brand-slate sm:block"
+              className="hidden rounded-lg border border-white/50 bg-white/70 px-3 py-2 text-xs font-medium text-neutral-600 hover:bg-white hover:text-brand-slate sm:block"
             >
               Volunteer Access
             </Link>
@@ -204,7 +204,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="border-t border-neutral-200 bg-[#FFFBF0] px-4 pb-4 pt-2 sm:hidden">
+        <div className="border-t border-white/40 bg-[#f2ecdf] px-4 pb-4 pt-2 sm:hidden">
           <div className="flex flex-col gap-1">
             {TABS.map((tab) => (
               <Link
@@ -214,7 +214,7 @@ export default function Navbar() {
                   rounded-lg px-4 py-2.5 text-sm font-medium transition-colors
                   ${isActive(tab.href)
                     ? "bg-brand-slate text-white"
-                    : "text-neutral-700 hover:bg-neutral-100"
+                    : "text-neutral-700 hover:bg-white/70"
                   }
                 `}
               >
@@ -231,7 +231,7 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="rounded-lg px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-100 hover:text-brand-slate"
+                    className="rounded-lg px-4 py-2.5 text-sm text-neutral-700 hover:bg-white/70 hover:text-brand-slate"
                   >
                     {link.label}
                   </Link>
@@ -248,7 +248,7 @@ export default function Navbar() {
                   Volunteer Portal
                 </Link>
                 <form action="/api/volunteer/signout" method="POST">
-                  <button type="submit" className="w-full rounded-lg px-4 py-2.5 text-left text-sm text-neutral-500 hover:bg-neutral-100">
+                  <button type="submit" className="w-full rounded-lg px-4 py-2.5 text-left text-sm text-neutral-500 hover:bg-white/70">
                     Sign out
                   </button>
                 </form>

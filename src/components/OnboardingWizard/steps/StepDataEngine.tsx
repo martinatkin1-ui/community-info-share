@@ -23,18 +23,19 @@ export default function StepDataEngine() {
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-brand-slate">Events / Schedule URL</label>
+        <label className="block text-sm font-semibold text-brand-slate">Events / Groups URLs</label>
         <div className="relative mt-1">
-          <Link2 className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-brand-slate/50" />
-          <input
-            type="url"
-            value={values.scrapingUrl}
-            onChange={(e) => onFieldChange("scrapingUrl", e.target.value)}
-            placeholder="https://www.example.org/events"
+          <Link2 className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-brand-slate/50" />
+          <textarea
+            value={values.scrapingUrls}
+            onChange={(e) => onFieldChange("scrapingUrls", e.target.value)}
+            placeholder={"https://www.example.org/events\nhttps://www.example.org/groups"}
+            rows={4}
             className="w-full rounded-xl border border-brand-sky/40 bg-white py-2.5 pl-10 pr-3 text-sm outline-none ring-brand-sky transition focus:ring-2"
           />
         </div>
-        {errors.scrapingUrl && <p className="mt-1 text-xs text-red-600">{errors.scrapingUrl}</p>}
+        <p className="mt-1 text-xs text-neutral-600">Add one URL per line (or separate with commas).</p>
+        {errors.scrapingUrls && <p className="mt-1 text-xs text-red-600">{errors.scrapingUrls}</p>}
       </div>
 
       <div className="rounded-xl border border-brand-amber/40 bg-gradient-to-r from-brand-amber/20 to-brand-cream p-4">

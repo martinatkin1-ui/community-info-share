@@ -5,38 +5,63 @@ export const runtime = "nodejs";
 type HeroImage = {
   url: string;
   alt: string;
-  source: "unsplash-api" | "unsplash-fallback";
+  source: "unsplash-api" | "curated-local";
   photographer?: string;
   link?: string;
 };
 
-const FALLBACK_QUERIES = [
-  "birmingham uk canals architecture skyline",
-  "library of birmingham modern architecture",
-  "coventry cathedral uk cityscape",
-  "west midlands urban regeneration",
-  "ironbridge uk heritage landscape",
+const CURATED_LOCAL_IMAGES: HeroImage[] = [
+  {
+    url: "/images/local-area/birmingham-canal.jpg",
+    alt: "Birmingham canal scene with wide sky and waterfront space",
+    source: "curated-local",
+  },
+  {
+    url: "/images/local-area/library-of-birmingham.jpg",
+    alt: "Library of Birmingham modern architecture against open sky",
+    source: "curated-local",
+  },
+  {
+    url: "/images/local-area/ironbridge.jpg",
+    alt: "The Iron Bridge over the River Severn in Shropshire",
+    source: "curated-local",
+  },
+  {
+    url: "/images/local-area/coventry-cathedral.jpg",
+    alt: "Coventry Cathedral ruins under a broad cloudy sky",
+    source: "curated-local",
+  },
+  {
+    url: "/images/local-area/birmingham-canal-regeneration.jpg",
+    alt: "Birmingham canal cityscape with modern regeneration and reflections",
+    source: "curated-local",
+  },
 ];
 
-function fallbackImage(): HeroImage {
-  const query = FALLBACK_QUERIES[Math.floor(Math.random() * FALLBACK_QUERIES.length)];
-  const sig = Math.floor(Math.random() * 1000);
-  return {
-    url: `https://source.unsplash.com/2400x1350/?${encodeURIComponent(query)}&sig=${sig}`,
-    alt: "West Midlands landmark in wide landscape orientation",
-    source: "unsplash-fallback",
-  };
+function curatedImage(query: string): HeroImage {
+  const q = query.toLowerCase();
+  if (q.includes("library")) return CURATED_LOCAL_IMAGES[1];
+  if (q.includes("iron") || q.includes("bridge")) return CURATED_LOCAL_IMAGES[2];
+  if (q.includes("coventry") || q.includes("cathedral")) return CURATED_LOCAL_IMAGES[3];
+  if (q.includes("canal")) return CURATED_LOCAL_IMAGES[0];
+  return CURATED_LOCAL_IMAGES[Math.floor(Math.random() * CURATED_LOCAL_IMAGES.length)];
 }
 
 export async function GET(request: Request) {
   const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+  const provider = (process.env.HERO_IMAGE_PROVIDER ?? "curated").toLowerCase();
   const url = new URL(request.url);
   const query = (url.searchParams.get("query") ?? "Birmingham UK architecture")
     .trim()
     .slice(0, 120);
 
+  // Default behavior is curated local imagery to guarantee local relevance.
+  if (provider !== "unsplash") {
+    return NextResponse.json(curatedImage(query));
+  }
+
   if (!accessKey) {
-    return NextResponse.json(fallbackImage());
+    return NextResponse.json(curatedImage(query));
   }
 
   try {
@@ -53,7 +78,7 @@ export async function GET(request: Request) {
     });
 
     if (!res.ok) {
-      return NextResponse.json(fallbackImage());
+      return NextResponse.json(curatedImage(query));
     }
 
     const data = (await res.json()) as {
@@ -64,7 +89,7 @@ export async function GET(request: Request) {
 
     const imageUrl = data.urls?.full ?? data.urls?.regular;
     if (!imageUrl) {
-      return NextResponse.json(fallbackImage());
+      return NextResponse.json(curatedImage(query));
     }
 
     return NextResponse.json({
@@ -75,6 +100,6 @@ export async function GET(request: Request) {
       link: data.user?.links?.html,
     } satisfies HeroImage);
   } catch {
-    return NextResponse.json(fallbackImage());
+    return NextResponse.json(curatedImage(query));
   }
 }

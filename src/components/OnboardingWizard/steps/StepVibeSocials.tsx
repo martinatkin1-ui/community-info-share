@@ -57,24 +57,24 @@ export default function StepVibeSocials() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <SocialInput
-          label="Facebook Handle"
+          label="Facebook"
           value={values.facebookHandle}
           error={errors.facebookHandle}
-          placeholder="wolverhampton.wellbeing"
+          placeholder="SUITWolves or facebook.com/SUITWolves"
           onChange={(v) => onFieldChange("facebookHandle", v)}
         />
         <SocialInput
-          label="Instagram Handle"
+          label="Instagram"
           value={values.instagramHandle}
           error={errors.instagramHandle}
-          placeholder="wm_wellbeing"
+          placeholder="suit_services or instagram.com/suit_services/"
           onChange={(v) => onFieldChange("instagramHandle", v)}
         />
         <SocialInput
-          label="X Handle"
+          label="X / Twitter"
           value={values.xHandle}
           error={errors.xHandle}
-          placeholder="wmwellbeing"
+          placeholder="SUITeam or twitter.com/SUITeam"
           onChange={(v) => onFieldChange("xHandle", v)}
         />
       </div>

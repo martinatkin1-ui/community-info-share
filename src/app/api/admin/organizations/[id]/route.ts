@@ -15,6 +15,18 @@ function buildMockPreview(scrapingUrl: string | null) {
   ];
 }
 
+function extractScrapingUrls(
+  metadata: { onboarding?: { scrapingUrls?: unknown } } | null,
+  scrapingUrl: string | null
+): string[] {
+  const fromMetadata = metadata?.onboarding?.scrapingUrls;
+  if (Array.isArray(fromMetadata)) {
+    const cleaned = fromMetadata.filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
+    if (cleaned.length > 0) return cleaned;
+  }
+  return scrapingUrl ? [scrapingUrl] : [];
+}
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> }
@@ -47,6 +59,7 @@ export async function GET(
         bio: data.description,
         websiteUrl: data.website_url,
         scrapingUrl: data.scraping_url,
+        scrapingUrls: extractScrapingUrls(data.metadata, data.scraping_url),
         email: data.email,
         phone: data.phone,
         socials,

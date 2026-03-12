@@ -38,7 +38,7 @@ const INITIAL_VALUES: OnboardingFormValues = {
   instagramHandle: "",
   xHandle: "",
   websiteUrl: "",
-  scrapingUrl: "",
+  scrapingUrls: "",
   coreServices: [
     {
       title: "",
@@ -161,7 +161,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       formData.set("orgType", values.orgType);
       formData.set("bio", values.bio.trim());
       formData.set("websiteUrl", values.websiteUrl.trim());
-      formData.set("scrapingUrl", values.scrapingUrl.trim());
+      formData.set("scrapingUrls", values.scrapingUrls.trim());
       formData.set("facebookHandle", values.facebookHandle.trim());
       formData.set("instagramHandle", values.instagramHandle.trim());
       formData.set("xHandle", values.xHandle.trim());
