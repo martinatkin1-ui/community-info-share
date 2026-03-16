@@ -27,6 +27,7 @@ const payloadSchema = z.object({
   specialist_focus: z.string().min(2),
   immediate_contact: z.string().min(7),
   self_referral_url: z.string().optional().default(""),
+  newsUrl: z.string().optional().default(""),
   is_emergency_provider: z.boolean(),
   facebookHandle: z.string().optional().default(""),
   instagramHandle: z.string().optional().default(""),
@@ -122,6 +123,7 @@ export async function POST(request: Request) {
       specialist_focus: String(form.get("specialist_focus") ?? "[]"),
       immediate_contact: String(form.get("immediate_contact") ?? ""),
       self_referral_url: String(form.get("self_referral_url") ?? ""),
+      newsUrl: String(form.get("newsUrl") ?? ""),
       is_emergency_provider: asBoolean(form.get("is_emergency_provider")),
       facebookHandle: String(form.get("facebookHandle") ?? ""),
       instagramHandle: String(form.get("instagramHandle") ?? ""),
@@ -268,6 +270,14 @@ export async function POST(request: Request) {
         { error: error?.message ?? "Failed to save onboarding record." },
         { status: 500 }
       );
+    }
+
+    const newsUrl = normalizeOptional(payload.newsUrl);
+    if (newsUrl) {
+      await supabase
+        .from("organizations")
+        .update({ news_url: newsUrl })
+        .eq("id", organizationId);
     }
 
     return NextResponse.json({

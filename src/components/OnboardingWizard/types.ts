@@ -49,6 +49,7 @@ export interface OnboardingFormValues {
   xHandle: string;
   websiteUrl: string;
   scrapingUrls: string;
+  newsUrl: string;
   specialist_focus: string[];
   immediate_contact: string;
   self_referral_url: string;
@@ -117,6 +118,13 @@ export const dataEngineSchema = z.object({
     .refine(
       (value) => parseScrapingUrls(value).every((url) => z.url().safeParse(url).success),
       "One or more scraping URLs are invalid."
+    ),
+  newsUrl: z
+    .string()
+    .trim()
+    .refine(
+      (value) => value.length === 0 || (URL_RE.test(value) && z.url().safeParse(value).success),
+      "News URL must start with http:// or https://."
     ),
 });
 
