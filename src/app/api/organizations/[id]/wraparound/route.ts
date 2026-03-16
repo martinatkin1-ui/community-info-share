@@ -16,7 +16,7 @@ export async function GET(
     const [orgRes, servicesRes, eventsRes] = await Promise.all([
       supabase
         .from("organizations")
-        .select("id, name, description, city, website_url")
+        .select("id, name, description, city, website_url, metadata")
         .eq("id", orgId)
         .eq("verification_status", "verified")
         .single(),
@@ -46,6 +46,9 @@ export async function GET(
       );
     }
 
+    const onboarding = orgRes.data.metadata?.onboarding ?? {};
+    const socials = onboarding.socials ?? {};
+
     return NextResponse.json({
       organization: {
         id: orgRes.data.id,
@@ -53,6 +56,12 @@ export async function GET(
         description: orgRes.data.description,
         city: orgRes.data.city,
         websiteUrl: orgRes.data.website_url,
+        logoUrl: onboarding.logoPublicUrl ?? null,
+        socials: {
+          facebook: socials.facebook || null,
+          instagram: socials.instagram || null,
+          x: socials.x || null,
+        },
       },
       services: servicesRes.data ?? [],
       events: eventsRes.data ?? [],

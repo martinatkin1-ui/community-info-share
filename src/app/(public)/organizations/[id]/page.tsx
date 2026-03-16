@@ -3,12 +3,20 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 
+interface OrgSocials {
+  facebook: string | null;
+  instagram: string | null;
+  x: string | null;
+}
+
 interface WrapOrg {
   id: string;
   name: string;
   description: string | null;
   city: string | null;
   websiteUrl: string | null;
+  logoUrl: string | null;
+  socials: OrgSocials | null;
 }
 
 interface WrapService {
@@ -80,16 +88,42 @@ export default function OrganizationWraparoundPage({ params }: { params: Promise
   return (
     <main className="mx-auto max-w-6xl px-6 py-12 space-y-6">
       <header className="rounded-2xl border border-neutral-200 bg-white p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Organization Profile</p>
-        <h1 className="mt-1 text-3xl font-bold text-brand-slate">{org.name}</h1>
-        <p className="mt-2 max-w-3xl text-sm text-neutral-600">
+        <div className="flex items-start gap-5">
+          {org.logoUrl && (
+            <img
+              src={org.logoUrl}
+              alt={`${org.name} logo`}
+              className="h-16 w-16 shrink-0 rounded-xl border border-neutral-100 object-contain bg-white"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Organization Profile</p>
+            <h1 className="mt-1 text-3xl font-bold text-brand-slate">{org.name}</h1>
+          </div>
+        </div>
+        <p className="mt-3 max-w-3xl text-sm text-neutral-600">
           {org.description ?? "No description provided yet."}
         </p>
-        <div className="mt-3 flex flex-wrap gap-3 text-xs text-neutral-500">
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-neutral-500">
           {org.city && <span>{org.city}</span>}
           {org.websiteUrl && (
             <a href={org.websiteUrl} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">
               Website
+            </a>
+          )}
+          {org.socials?.facebook && (
+            <a href={`https://facebook.com/${org.socials.facebook.replace(/^@/, "")}`} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">
+              Facebook
+            </a>
+          )}
+          {org.socials?.instagram && (
+            <a href={`https://instagram.com/${org.socials.instagram.replace(/^@/, "")}`} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">
+              Instagram
+            </a>
+          )}
+          {org.socials?.x && (
+            <a href={`https://x.com/${org.socials.x.replace(/^@/, "")}`} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">
+              X
             </a>
           )}
           <Link href="/events" className="underline hover:no-underline">Back to Discovery</Link>
