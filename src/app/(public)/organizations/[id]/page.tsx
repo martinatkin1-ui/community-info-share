@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 
 interface WrapOrg {
   id: string;
@@ -36,7 +36,8 @@ function statusBadge(status: WrapService["availability_status"]) {
   return "bg-red-100 text-red-800";
 }
 
-export default function OrganizationWraparoundPage({ params }: { params: { id: string } }) {
+export default function OrganizationWraparoundPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [org, setOrg] = useState<WrapOrg | null>(null);
   const [services, setServices] = useState<WrapService[]>([]);
   const [events, setEvents] = useState<WrapEvent[]>([]);
@@ -48,7 +49,7 @@ export default function OrganizationWraparoundPage({ params }: { params: { id: s
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/organizations/${params.id}/wraparound`);
+        const res = await fetch(`/api/organizations/${id}/wraparound`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Failed to load organization profile.");
         setOrg(data.organization);
@@ -62,7 +63,7 @@ export default function OrganizationWraparoundPage({ params }: { params: { id: s
     }
 
     load();
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
     return <main className="mx-auto max-w-6xl px-6 py-12 text-sm text-neutral-500">Loading profile...</main>;
