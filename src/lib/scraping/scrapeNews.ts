@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import * as cheerio from "cheerio";
 import { createHash } from "crypto";
 
 export interface ScrapedNewsItem {
@@ -15,65 +15,53 @@ function hashId(url: string, body: string): string {
 }
 
 export async function scrapeNewsPage(url: string): Promise<ScrapedNewsItem[]> {
-  const browser = await chromium.launch({ headless: true });
+  const res = await fetch(url, {
+    headers: { "User-Agent": "CommunityInfoShareBot/1.0" },
+    signal: AbortSignal.timeout(30_000),
+  });
 
-  try {
-    const page = await browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle", timeout: 45000 });
+  if (!res.ok) return [];
 
-    type RawItem = Omit<ScrapedNewsItem, "externalId">;
+  const html = await res.text();
+  const $ = cheerio.load(html);
 
-    const items: RawItem[] = await page.evaluate((sourceUrl) => {
-      const results: Array<{
-        title: string | null;
-        body: string;
-        imageUrl: string | null;
-        publishedAt: string | null;
-      }> = [];
+  const selectors = "article, .post, .news-item, .blog-post, .announcement, [class*='card'], [class*='post']";
+  let candidates = $(selectors).toArray();
 
-      const articleEls = document.querySelectorAll("article, .post, .news-item, .blog-post, .announcement, [class*='card'], [class*='post']");
+  if (candidates.length === 0) {
+    candidates = $("main section, main > div > div").toArray();
+  }
 
-      const candidates = articleEls.length > 0
-        ? articleEls
-        : document.querySelectorAll("main section, main > div > div");
+  type RawItem = Omit<ScrapedNewsItem, "externalId">;
+  const items: RawItem[] = [];
 
-      candidates.forEach((el) => {
-        const heading = el.querySelector("h1, h2, h3, h4");
-        const title = heading?.textContent?.trim() ?? null;
-        const bodyParts: string[] = [];
-        el.querySelectorAll("p, li").forEach((p) => {
-          const text = p.textContent?.trim();
-          if (text && text.length > 10) bodyParts.push(text);
-        });
-        const body = bodyParts.join("\n").slice(0, 1500);
-        if (body.length < 20) return;
+  for (const el of candidates) {
+    const $el = $(el);
+    const heading = $el.find("h1, h2, h3, h4").first();
+    const title = heading.text().trim() || null;
 
-        const img = el.querySelector("img[src]");
-        const imageUrl = img?.getAttribute("src") ?? null;
+    const bodyParts: string[] = [];
+    $el.find("p, li").each((_, p) => {
+      const text = $(p).text().trim();
+      if (text.length > 10) bodyParts.push(text);
+    });
+    const body = bodyParts.join("\n").slice(0, 1500);
+    if (body.length < 20) continue;
 
-        const time = el.querySelector("time[datetime]");
-        const publishedAt = time?.getAttribute("datetime") ?? null;
+    const imgSrc = $el.find("img[src]").first().attr("src") ?? null;
+    const publishedAt = $el.find("time[datetime]").first().attr("datetime") ?? null;
 
-        results.push({ title, body, imageUrl, publishedAt });
-      });
+    items.push({ title, body, sourceUrl: url, imageUrl: imgSrc, publishedAt });
+  }
 
-      return results.map((item) => ({
-        ...item,
-        sourceUrl,
-      }));
-    }, url);
-
-    return items
-      .filter((item) => item.body.length >= 20)
-      .slice(0, 20)
-      .map((item) => ({
-        ...item,
-        imageUrl: item.imageUrl && !item.imageUrl.startsWith("http")
+  return items
+    .slice(0, 20)
+    .map((item) => ({
+      ...item,
+      imageUrl:
+        item.imageUrl && !item.imageUrl.startsWith("http")
           ? new URL(item.imageUrl, url).href
           : item.imageUrl,
-        externalId: hashId(url, item.body),
-      }));
-  } finally {
-    await browser.close();
-  }
+      externalId: hashId(url, item.body),
+    }));
 }
