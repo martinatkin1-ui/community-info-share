@@ -8,6 +8,55 @@ import type { ScrapePublishRequest } from "@/types/scraping";
 
 export const runtime = "nodejs";
 
+function normalizeComparableUrl(value: string): string | null {
+  try {
+    const url = new URL(value.trim());
+    url.hash = "";
+    url.search = "";
+    return url.toString().replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
+}
+
+async function inferOrganizationIdFromSourceUrl(sourceUrl: string): Promise<string | undefined> {
+  const normalizedSource = normalizeComparableUrl(sourceUrl);
+  if (!normalizedSource) return undefined;
+
+  const source = new URL(normalizedSource);
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("id, scraping_url, website_url, news_url");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const candidates = (data ?? []).filter((org) => {
+    const possibleUrls = [org.scraping_url, org.website_url, org.news_url]
+      .map((value) => (value ? normalizeComparableUrl(value) : null))
+      .filter((value): value is string => Boolean(value));
+
+    return possibleUrls.some((candidate) => {
+      if (candidate === normalizedSource) return true;
+
+      try {
+        const candidateUrl = new URL(candidate);
+        return candidateUrl.origin === source.origin && normalizedSource.startsWith(candidate);
+      } catch {
+        return false;
+      }
+    });
+  });
+
+  if (candidates.length === 1) {
+    return candidates[0].id;
+  }
+
+  return undefined;
+}
+
 export async function POST(request: Request) {
   let access;
   try {
@@ -20,11 +69,17 @@ export async function POST(request: Request) {
   const { organizationId: requestedOrganizationId, sourceUrl, approvedEvents = [] } = payload ?? {};
   const organizationId =
     requestedOrganizationId ??
+    (access.role === "super_admin" && sourceUrl ? await inferOrganizationIdFromSourceUrl(sourceUrl) : undefined) ??
     (access.role !== "super_admin" && access.organizationIds.length === 1 ? access.organizationIds[0] : undefined);
 
   if (!organizationId || !sourceUrl || approvedEvents.length === 0) {
     return NextResponse.json(
-      { error: "organizationId, sourceUrl and at least one approved event are required." },
+      {
+        error:
+          access.role === "super_admin"
+            ? "Could not determine the organization from the scraped URL. Enter the Organization ID or make sure the organization has a matching scraping or website URL."
+            : "organizationId, sourceUrl and at least one approved event are required.",
+      },
       { status: 400 }
     );
   }

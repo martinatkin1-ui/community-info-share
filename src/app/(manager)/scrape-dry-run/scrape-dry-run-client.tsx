@@ -142,7 +142,7 @@ export default function ScrapeDryRunClient() {
           <span className="text-sm font-medium">Organization ID</span>
           <input
             type="text"
-            placeholder="Leave blank if your manager account is linked to one organization"
+            placeholder="Leave blank to auto-use your linked org, or auto-match from URL for superusers"
             value={organizationId}
             onChange={(event) => setOrganizationId(event.target.value)}
             className="rounded-md border border-neutral-300 px-3 py-2"
