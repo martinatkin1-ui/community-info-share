@@ -139,10 +139,10 @@ export default function ScrapeDryRunClient() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Organization ID (optional)</span>
+          <span className="text-sm font-medium">Organization ID</span>
           <input
             type="text"
-            placeholder="UUID used during publish"
+            placeholder="Leave blank if your manager account is linked to one organization"
             value={organizationId}
             onChange={(event) => setOrganizationId(event.target.value)}
             className="rounded-md border border-neutral-300 px-3 py-2"

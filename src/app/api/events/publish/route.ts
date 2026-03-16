@@ -17,7 +17,10 @@ export async function POST(request: Request) {
   }
 
   const payload = (await request.json()) as ScrapePublishRequest;
-  const { organizationId, sourceUrl, approvedEvents = [] } = payload ?? {};
+  const { organizationId: requestedOrganizationId, sourceUrl, approvedEvents = [] } = payload ?? {};
+  const organizationId =
+    requestedOrganizationId ??
+    (access.role !== "super_admin" && access.organizationIds.length === 1 ? access.organizationIds[0] : undefined);
 
   if (!organizationId || !sourceUrl || approvedEvents.length === 0) {
     return NextResponse.json(
