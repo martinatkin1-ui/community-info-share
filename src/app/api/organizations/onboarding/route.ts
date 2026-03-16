@@ -192,7 +192,7 @@ export async function POST(request: Request) {
       const ext = logoFile.name.split(".").pop()?.toLowerCase() ?? "png";
       const path = `${safeSlug(payload.name)}-${Date.now()}.${ext}`;
 
-      const { error: uploadError } = await supabase.storage
+      let { error: uploadError } = await supabase.storage
         .from(LOGO_BUCKET)
         .upload(path, logoFile, {
           cacheControl: "3600",
@@ -200,18 +200,24 @@ export async function POST(request: Request) {
           contentType: logoFile.type || "application/octet-stream",
         });
 
+      if (uploadError && /bucket\s+not\s+found/i.test(uploadError.message)) {
+        await supabase.storage.createBucket(LOGO_BUCKET, {
+          public: true,
+          allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"],
+          fileSizeLimit: MAX_LOGO_BYTES,
+        });
+        const retry = await supabase.storage
+          .from(LOGO_BUCKET)
+          .upload(path, logoFile, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: logoFile.type || "application/octet-stream",
+          });
+        uploadError = retry.error;
+      }
+
       if (uploadError) {
-        const isMissingBucket = /bucket\s+not\s+found/i.test(uploadError.message);
-        if (isMissingBucket) {
-          warnings.push(
-            "Logo upload skipped because the storage bucket is not configured yet. Verification will continue without a logo."
-          );
-        } else {
-          return NextResponse.json(
-            { error: `Logo upload failed: ${uploadError.message}` },
-            { status: 500 }
-          );
-        }
+        warnings.push(`Logo upload failed: ${uploadError.message}. Continuing without a logo.`);
       } else {
         const publicUrlInfo = supabase.storage.from(LOGO_BUCKET).getPublicUrl(path);
         logoStoragePath = path;

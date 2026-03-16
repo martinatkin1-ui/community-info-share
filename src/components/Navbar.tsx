@@ -11,6 +11,7 @@ import type { VolunteerSession } from "@/lib/volunteer/session";
 const TABS = [
   { label: "Events", href: "/events" },
   { label: "Organisations", href: "/organizations" },
+  { label: "News", href: "/news" },
 ];
 
 const STAFF_LINKS = [

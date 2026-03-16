@@ -1,7 +1,7 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { Loader2, Mail, Phone, Wrench, X } from "lucide-react";
+import { Loader2, Mail, Phone, Play, Wrench, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface OrgDetail {
@@ -45,7 +45,8 @@ export default function VerificationDrawer({
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
   const [tweak, setTweak] = useState("");
-  const [actionLoading, setActionLoading] = useState<"verify" | "changes" | "fix" | null>(null);
+  const [actionLoading, setActionLoading] = useState<"verify" | "changes" | "fix" | "scrape" | null>(null);
+  const [scrapeResult, setScrapeResult] = useState<{ count: number; warnings: string[] } | null>(null);
 
   useEffect(() => {
     if (!open || !organizationId) return;
@@ -96,6 +97,56 @@ export default function VerificationDrawer({
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function runScrape() {
+    const scrapeUrl = org?.scrapingUrls?.[0] ?? org?.scrapingUrl;
+    if (!scrapeUrl || !organizationId) return;
+
+    setActionLoading("scrape");
+    setScrapeResult(null);
+    setError(null);
+
+    try {
+      const dryRes = await fetch("/api/scrape/dry-run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: scrapeUrl, provider: "auto" }),
+      });
+      const dryData = await dryRes.json();
+      if (!dryRes.ok) throw new Error(dryData.error ?? "Scrape failed.");
+
+      const events = (dryData.events ?? []).filter(
+        (e: { confidence: number }) => e.confidence >= 0.5
+      );
+
+      if (events.length === 0) {
+        setScrapeResult({ count: 0, warnings: dryData.warnings ?? ["No events found on the page."] });
+        return;
+      }
+
+      const pubRes = await fetch("/api/events/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organizationId,
+          sourceUrl: dryData.sourceUrl ?? scrapeUrl,
+          approvedEvents: events,
+        }),
+      });
+      const pubData = await pubRes.json();
+      if (!pubRes.ok) throw new Error(pubData.error ?? "Publish failed.");
+
+      setScrapeResult({
+        count: pubData.approvedCount ?? events.length,
+        warnings: dryData.warnings ?? [],
+      });
+      onActionComplete();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Scrape failed.");
     } finally {
       setActionLoading(null);
     }
@@ -159,14 +210,37 @@ export default function VerificationDrawer({
               <section className="space-y-3 rounded-xl border border-neutral-200 p-4">
                 <h3 className="font-semibold text-neutral-900">Quality Control Actions</h3>
 
-                <button
-                  type="button"
-                  onClick={() => runAction("verify")}
-                  disabled={actionLoading !== null}
-                  className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {actionLoading === "verify" ? "Approving..." : "Approve / Verify"}
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => runAction("verify")}
+                    disabled={actionLoading !== null}
+                    className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {actionLoading === "verify" ? "Approving..." : "Approve / Verify"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={runScrape}
+                    disabled={actionLoading !== null || !(org?.scrapingUrls?.[0] ?? org?.scrapingUrl)}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50"
+                  >
+                    <Play className="h-4 w-4" />
+                    {actionLoading === "scrape" ? "Scraping..." : "Scrape Events"}
+                  </button>
+                </div>
+
+                {scrapeResult && (
+                  <div className={`rounded-lg border p-3 text-sm ${scrapeResult.count > 0 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+                    {scrapeResult.count > 0
+                      ? `Scraped and published ${scrapeResult.count} event${scrapeResult.count === 1 ? "" : "s"}.`
+                      : "No events found on the scraping URL."}
+                    {scrapeResult.warnings.map((w, i) => (
+                      <p key={i} className="mt-1 text-xs opacity-80">{w}</p>
+                    ))}
+                  </div>
+                )}
 
                 <div className="space-y-2 rounded-lg border border-neutral-200 p-3">
                   <label className="block text-xs font-medium text-neutral-700">Request Changes Feedback</label>
