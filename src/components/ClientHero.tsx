@@ -51,10 +51,10 @@ export default function ClientHero() {
           West Midlands Community Discovery
         </p>
 
-        <h1 className="text-4xl font-bold leading-tight text-brand-slate sm:text-5xl lg:text-6xl">
+        <p className="text-4xl font-bold leading-tight text-brand-slate sm:text-5xl lg:text-6xl" role="presentation">
           Find Local Support,
           <span className="text-brand-coral"> Right Now</span>
-        </h1>
+        </p>
 
         <p className="mx-auto mt-5 max-w-2xl text-base text-neutral-700 sm:text-lg">
           Explore events, services, and organisations across Birmingham, Wolverhampton,

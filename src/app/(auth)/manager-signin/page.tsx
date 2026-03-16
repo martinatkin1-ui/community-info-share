@@ -26,7 +26,8 @@ function ManagerSigninContent() {
       });
       if (authError) throw authError;
 
-      const next = searchParams.get("next") || "/dashboard";
+      let next = searchParams.get("next") || "/dashboard";
+      if (!next.startsWith("/") || next.startsWith("//")) next = "/dashboard";
       router.push(next);
       router.refresh();
     } catch (err) {

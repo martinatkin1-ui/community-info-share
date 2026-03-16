@@ -6,7 +6,7 @@
  * Access keys are 8-character uppercase alphanumeric strings (no I/O/1/0).
  */
 
-import { createHmac, randomBytes } from "crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 
 export interface VolunteerSession {
   /** UUID of the organisation the volunteer authenticated against. */
@@ -83,7 +83,9 @@ export function verifyVolunteerToken(token: string): VolunteerSession | null {
     const data = token.slice(0, dot);
     const sig = token.slice(dot + 1);
     const expected = createHmac("sha256", secret()).update(data).digest("base64url");
-    if (sig !== expected) return null;
+    const sigBuf = Buffer.from(sig);
+    const expectedBuf = Buffer.from(expected);
+    if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) return null;
     const payload = JSON.parse(
       Buffer.from(data, "base64url").toString("utf8")
     ) as VolunteerSession;

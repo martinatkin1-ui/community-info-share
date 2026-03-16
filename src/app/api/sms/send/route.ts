@@ -1,16 +1,17 @@
 import { z } from "zod";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { sendSms } from "@/lib/sms/sendSms";
+import { consumeRateLimit, clientIpFromHeaders } from "@/lib/security/rateLimit";
+import { getAuthenticatedUser } from "@/lib/supabase/auth";
+import { COOKIE_NAME, verifyVolunteerToken } from "@/lib/volunteer/session";
 
 export const runtime = "nodejs";
 
-// ---------------------------------------------------------------------------
-// Schema
-// ---------------------------------------------------------------------------
-
 const bodySchema = z.object({
-  phone:            z.string().regex(/^[\d\s+\(\)\-]{7,20}$/, "Invalid phone number"),
+  phone:            z.string().regex(/^\+?[\d\s\(\)\-]{7,20}$/, "Invalid phone number")
+                      .refine((v) => v.replace(/\D/g, "").length >= 7, "Phone must contain at least 7 digits"),
   title:            z.string().min(1).max(200),
   dateText:         z.string().optional(),
   timeText:         z.string().optional().nullable(),
@@ -18,52 +19,51 @@ const bodySchema = z.object({
   organizationName: z.string().optional().nullable(),
 });
 
-// ---------------------------------------------------------------------------
-// In-process rate limiter (3 SMS / IP / 60 s).
-// NOTE: Module-level state is per-process. In multi-instance serverless
-// deployments pair this with a distributed store (e.g. Upstash Redis).
-// ---------------------------------------------------------------------------
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const WINDOW_MS  = 60_000;
 const MAX_PER_IP = 3;
 
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || entry.resetAt < now) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return false;
-  }
-  if (entry.count >= MAX_PER_IP) return true;
-  entry.count++;
+async function isAuthenticated(): Promise<boolean> {
+  try {
+    const user = await getAuthenticatedUser().catch(() => null);
+    if (user) return true;
+  } catch { /* not a supabase user */ }
+
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(COOKIE_NAME)?.value;
+    if (token && verifyVolunteerToken(token)) return true;
+  } catch { /* no volunteer session */ }
+
   return false;
 }
 
-/**
- * POST /api/sms/send
- * Sends a lightweight event summary SMS to the client's phone.
- * UK GDPR: phone number is NOT stored anywhere — used only for this
- * transient delivery and never appears in any database or log.
- */
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (isRateLimited(ip)) {
+  const ip = clientIpFromHeaders(request.headers);
+
+  const { allowed, retryAfterSec } = consumeRateLimit(`sms:${ip}`, MAX_PER_IP, WINDOW_MS);
+  if (!allowed) {
     return NextResponse.json(
       { error: "Too many requests. Please wait before sending another SMS." },
-      { status: 429 }
+      { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
     );
   }
 
-  const parsed = bodySchema.safeParse(await request.json());
-  if (!parsed.success) {
+  if (!(await isAuthenticated())) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid request body." },
-      { status: 400 }
+      { error: "Please sign in or use a volunteer access key before sending SMS." },
+      { status: 401 }
     );
   }
 
-  const { phone, title, dateText, timeText, locationName, organizationName } = parsed.data;
+  let body: z.infer<typeof bodySchema>;
+  try {
+    body = bodySchema.parse(await request.json());
+  } catch (err) {
+    const msg = err instanceof z.ZodError ? err.issues[0]?.message : "Invalid request body.";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
+
+  const { phone, title, dateText, timeText, locationName, organizationName } = body;
 
   const lines: string[] = [
     `📅 ${title.slice(0, 80)}`,
@@ -80,9 +80,9 @@ export async function POST(request: Request) {
   try {
     await sendSms(phone.trim(), message);
     return NextResponse.json({ status: "sent" });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "SMS failed." },
+      { error: "SMS could not be sent. Please try again later." },
       { status: 500 }
     );
   }

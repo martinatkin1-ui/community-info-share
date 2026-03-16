@@ -59,7 +59,12 @@ function validatePayload(body: Partial<ReferralFormData>): string | null {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as Partial<ReferralFormData>;
+  let body: Partial<ReferralFormData>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
 
   const validationError = validatePayload(body);
   if (validationError) {

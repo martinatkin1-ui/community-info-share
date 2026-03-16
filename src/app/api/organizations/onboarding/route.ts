@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { createServerClient } from "@/lib/supabase/server";
+import { consumeRateLimit, clientIpFromHeaders } from "@/lib/security/rateLimit";
 
 export const runtime = "nodejs";
+
+const MAX_LOGO_BYTES = 2 * 1024 * 1024; // 2 MB
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"]);
 
 const payloadSchema = z.object({
   name: z.string().min(2),
@@ -98,6 +102,15 @@ function parseSpecialistFocus(input: string): string[] {
 }
 
 export async function POST(request: Request) {
+  const ip = clientIpFromHeaders(request.headers);
+  const { allowed, retryAfterSec } = consumeRateLimit(`onboard:${ip}`, 5, 3600_000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many registration attempts. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
+    );
+  }
+
   try {
     const form = await request.formData();
     const body = {
@@ -170,6 +183,12 @@ export async function POST(request: Request) {
     let logoPublicUrl: string | null = null;
 
     if (logoFile && logoFile.size > 0) {
+      if (logoFile.size > MAX_LOGO_BYTES) {
+        return NextResponse.json({ error: "Logo must be under 2 MB." }, { status: 400 });
+      }
+      if (!ALLOWED_IMAGE_TYPES.has(logoFile.type)) {
+        return NextResponse.json({ error: "Logo must be an image (JPEG, PNG, WebP, GIF, or SVG)." }, { status: 400 });
+      }
       const ext = logoFile.name.split(".").pop()?.toLowerCase() ?? "png";
       const path = `${safeSlug(payload.name)}-${Date.now()}.${ext}`;
 

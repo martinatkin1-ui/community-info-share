@@ -47,14 +47,18 @@ export default function Navbar() {
 
   // Check Supabase session to decide whether to show Staff & Partners inline
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getSession().then(({ data }: { data: { session: unknown } }) => {
-      setIsStaff(!!data.session);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_e: unknown, session: Session | null) => {
-      setIsStaff(!!session);
-    });
-    return () => listener.subscription.unsubscribe();
+    try {
+      const supabase = createBrowserSupabaseClient();
+      supabase.auth.getSession().then(({ data }: { data: { session: unknown } }) => {
+        setIsStaff(!!data.session);
+      });
+      const { data: listener } = supabase.auth.onAuthStateChange((_e: unknown, session: Session | null) => {
+        setIsStaff(!!session);
+      });
+      return () => listener.subscription.unsubscribe();
+    } catch {
+      // Supabase not configured — default to non-staff view
+    }
   }, []);
 
   // Close dropdown on outside click

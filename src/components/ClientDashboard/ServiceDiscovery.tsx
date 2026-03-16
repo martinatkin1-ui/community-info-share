@@ -28,8 +28,8 @@ const NEED_TO_TAG: Record<NeedKey, string> = {
 
 const QUERY_SYNONYM_MAP: Array<{ test: RegExp; mapsTo: NeedKey }> = [
   { test: /money|debt|rent|arrears|bills/i, mapsTo: "debt" },
-  { test: /house|housing|homeless|accommodation/i, mapsTo: "housing" },
-  { test: /anxiety|depress|mental|wellbeing|panic/i, mapsTo: "mental_health" },
+  { test: /house|housing|homeless|accommodation|rough.?sleep/i, mapsTo: "housing" },
+  { test: /anxiety|depress|mental|wellbeing|panic|addiction|substance|alcohol|drugs|recovery|gambling|rehab/i, mapsTo: "mental_health" },
   { test: /family|parent|child|domestic/i, mapsTo: "family" },
   { test: /job|work|employment|cv|benefits/i, mapsTo: "employment" },
   { test: /rights|legal|advocacy|support worker/i, mapsTo: "advocacy" },
