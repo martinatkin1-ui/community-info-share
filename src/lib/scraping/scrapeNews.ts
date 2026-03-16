@@ -21,7 +21,9 @@ export async function scrapeNewsPage(url: string): Promise<ScrapedNewsItem[]> {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle", timeout: 45000 });
 
-    const items: ScrapedNewsItem[] = await page.evaluate((sourceUrl) => {
+    type RawItem = Omit<ScrapedNewsItem, "externalId">;
+
+    const items: RawItem[] = await page.evaluate((sourceUrl) => {
       const results: Array<{
         title: string | null;
         body: string;
